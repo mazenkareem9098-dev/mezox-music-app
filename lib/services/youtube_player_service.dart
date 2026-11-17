@@ -207,6 +207,7 @@ class YouTubePlayerService extends ChangeNotifier {
 var mmPlayer = null;
 var mmReady = false;
 var mmQueued = null;
+var mmAutoPlayPending = false;
 function mmSend(handler, data) {
   try {
     if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
@@ -238,6 +239,11 @@ window.onYouTubeIframeAPIReady = function () {
       },
       onStateChange: function (e) {
         mmSend('mmState', {state: e.data});
+        if (e.data === YT.PlayerState.PAUSED && mmAutoPlayPending) {
+          mmAutoPlayPending = false;
+          try { mmPlayer.unMute(); mmPlayer.playVideo(); } catch (err) {}
+        }
+        if (e.data === YT.PlayerState.PLAYING) mmAutoPlayPending = false;
         if (e.data === YT.PlayerState.ENDED) mmSend('mmState', {state: 0});
       },
       onError: function (e) {
@@ -248,8 +254,16 @@ window.onYouTubeIframeAPIReady = function () {
 };
 function mmLoad(id) {
   if (!mmReady) { mmQueued = id; return; }
-  try { mmPlayer.loadVideoById(id); }
-  catch (e) { mmSend('mmError', {message: String(e)}); }
+  mmAutoPlayPending = true;
+  try {
+    mmPlayer.unMute();
+    mmPlayer.loadVideoById(id);
+    setTimeout(function () {
+      if (!mmAutoPlayPending) return;
+      mmAutoPlayPending = false;
+      try { mmPlayer.unMute(); mmPlayer.playVideo(); } catch (err) {}
+    }, 700);
+  } catch (e) { mmSend('mmError', {message: String(e)}); }
 }
 function mmPlay() { try { mmPlayer.playVideo(); } catch (e) {} }
 function mmPause() { try { mmPlayer.pauseVideo(); } catch (e) {} }

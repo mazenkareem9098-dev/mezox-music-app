@@ -18,6 +18,9 @@ class YouTubePlayerService extends ChangeNotifier {
       transparentBackground: true,
       allowBackgroundAudioPlaying: true,
       disableContextMenu: true,
+      disableVerticalScroll: true,
+      disableHorizontalScroll: true,
+      useHybridComposition: false,
       mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
     );
   }

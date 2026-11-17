@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/library_service.dart';
+import '../../theme/l10n.dart';
 import '../../theme/m_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signUp() async {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'اكتب اسمكFirst — enter a name to continue.');
+      setState(() => _error = L10n.t(context, 'signUpNameMissing'));
       return;
     }
     setState(() {
@@ -65,12 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: MColors.muted)),
+            child: Text(L10n.t(context, 'cancel'), style: const TextStyle(color: MColors.muted)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: MColors.primary),
             onPressed: () => Navigator.pop(context, ctrl.text),
-            child: const Text('Save'),
+            child: Text(L10n.t(context, 'save')),
           ),
         ],
       ),
@@ -84,6 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final api = context.watch<ApiService>();
+    context.watch<LibraryService>();
     return AnimatedRedBackdrop(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -112,8 +115,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'LISTEN. ENJOY. REPEAT.',
+                    Text(
+                      L10n.t(context, 'slogan').toUpperCase(),
                       style: TextStyle(
                         color: MColors.bright,
                         fontSize: 12,
@@ -122,10 +125,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    const Text(
-                      'اكتب اسمك وابدأ — name only, no password.',
+                    Text(
+                      L10n.t(context, 'signUpPrompt'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: MColors.muted, fontSize: 13),
+                      style: const TextStyle(color: MColors.muted, fontSize: 13),
                     ),
                     const SizedBox(height: 18),
                     TextField(
@@ -134,16 +137,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _signUp(),
                       style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        hintText: 'Your name',
-                        prefixIcon: Icon(Icons.person_outline),
+                      decoration: InputDecoration(
+                        hintText: L10n.t(context, 'yourName'),
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
                     ),
                     const SizedBox(height: 14),
                     InkWell(
                       onTap: () => _editRelay(context),
                       child: Text(
-                        'Relay: ${api.baseUrl}  (tap to change)',
+                        '${L10n.t(context, 'relay')}: ${api.baseUrl}  (${L10n.t(context, 'tapToChange')})',
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: MColors.bright, fontSize: 11),
                       ),
@@ -160,16 +163,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: GlowButton(
-                        label: _busy ? 'Starting...' : 'SIGN UP',
+                        label: _busy
+                            ? L10n.t(context, 'starting')
+                            : L10n.t(context, 'signUp'),
                         icon: Icons.arrow_forward_rounded,
                         filled: true,
                         onPressed: _busy ? () {} : _signUp,
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Text(
-                      'A new red music experience.',
-                      style: TextStyle(color: MColors.muted, fontSize: 11),
+                    Text(
+                      L10n.t(context, 'newExperience'),
+                      style: const TextStyle(color: MColors.muted, fontSize: 11),
                     ),
                   ],
                 ),

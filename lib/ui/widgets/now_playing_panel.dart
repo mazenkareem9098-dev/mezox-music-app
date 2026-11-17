@@ -59,9 +59,9 @@ class NowPlayingPanel extends StatelessWidget {
                         child: const Icon(Icons.graphic_eq, color: MColors.primary, size: 54),
                       ),
                       const SizedBox(height: 18),
-                      const Text(
+                      Text(
                         L10n.t(context, 'nothingPlaying'),
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 6),
                       const Text(
@@ -174,8 +174,11 @@ class NowPlayingPanel extends StatelessWidget {
 
   Widget _buildQueue(BuildContext context, MezoxPlayerController player) {
     if (player.queue.isEmpty) {
-      return const Center(
-        child: Text(L10n.t(context, 'queueEmpty'), style: TextStyle(color: MColors.muted, fontSize: 12)),
+      return Center(
+        child: Text(
+          L10n.t(context, 'queueEmpty'),
+          style: const TextStyle(color: MColors.muted, fontSize: 12),
+        ),
       );
     }
     return Column(

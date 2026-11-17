@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(mezox_music LANGUAGES CXX)
 
+# just_audio_windows uses <experimental/coroutine>, rejected by MSVC 14.51+.
+add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "mezox_music")

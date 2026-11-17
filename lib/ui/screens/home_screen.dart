@@ -47,6 +47,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Future<List<Track>> _collect(YouTubeService yt, List<String> queries) async {
+    final seen = <String>{};
+    final out = <Track>[];
+    for (final q in queries) {
+      final batch = await yt.category(q, limit: 24);
+      for (final t in batch) {
+        if (seen.add(t.sourceId)) out.add(t);
+      }
+      if (out.length >= 20) break;
+    }
+    final limited = out.length > 24 ? out.sublist(0, 24) : out;
+    return limited;
+  }
+
   Future<void> _load() async {
     if (!mounted) return;
     setState(() {
@@ -68,18 +82,42 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final List<List<Track>> results = await Future.wait<List<Track>>(
         <Future<List<Track>>>[
-          yt.category(madeQuery, limit: 24),
-          yt.search('trending music hits', limit: 24),
-          yt.category(recommendedQuery, limit: 24),
-          yt.search('popular artists music', limit: 24),
-          yt.category('new music releases', limit: 24),
+          _collect(yt, <String>[
+            madeQuery,
+            'top music hits 2026',
+            'popular arabic and english songs',
+          ]),
+          _collect(yt, <String>[
+            'trending music videos',
+            'top 50 songs',
+            'most played songs now',
+          ]),
+          _collect(yt, <String>[
+            recommendedQuery,
+            'popular music mix',
+            'chill playlist songs',
+          ]),
+          _collect(yt, <String>[
+            'popular music artists',
+            'top singers hits',
+            'famous bands songs',
+          ]),
+          _collect(yt, <String>[
+            'new music releases 2026',
+            'latest music videos',
+            'new arabic songs',
+          ]),
         ],
       );
       if (!mounted) return;
       setState(() {
-        _sections[_madeKey] = results[0];
+        _sections[_madeKey] = results[0].isNotEmpty
+            ? results[0]
+            : <Track>[...lib.favourites, ...lib.recentlyPlayed];
         _sections[_trendingKey] = results[1];
-        _sections[_recommendedKey] = results[2];
+        _sections[_recommendedKey] = results[2].isNotEmpty
+            ? results[2]
+            : results[0];
         _sections[_artistsKey] = results[3];
         _sections[_newKey] = results[4];
         final bool any = _sections.values.any((list) => list.isNotEmpty);

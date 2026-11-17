@@ -1,0 +1,38 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+    inputs:
+      mezox_api:
+        description: 'MEZOX_API server URL (e.g. https://mezox-music-api.onrender.com)'
+        required: true
+        default: 'http://10.0.2.2:3000'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+      - name: Generate platform scaffolding (if needed)
+        shell: bash
+        run: |
+          if [ ! -d "windows" ]; then
+            flutter create --project-name mezox_music --org com.mezox .
+          fi
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Build release Windows
+        run: flutter build windows --release --dart-define=MEZOX_API=${{ github.event.inputs.mezox_api }}
+      - name: Upload Windows release folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: MEZOX-MUSIC-windows-release
+          path: build/windows/x64/runner/Release/

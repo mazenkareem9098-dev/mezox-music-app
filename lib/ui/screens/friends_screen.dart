@@ -47,16 +47,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
             child: const Text('Invite'),
           ),
         ]),
-        if (_msg != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_msg!, style: const TextStyle(color: Colors.tealAccent))),
+        if (_msg != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_msg!, style: const TextStyle(color: Colors.redAccent))),
         if (friends.lastListenMessage != null)
           Padding(padding: const EdgeInsets.only(top: 8), child: Text(friends.lastListenMessage!, style: const TextStyle(color: Colors.white70))),
         const SizedBox(height: 16),
 
         if (friends.incomingListenRequest != null)
           Card(
-            color: Colors.deepPurple.withOpacity(0.2),
+            color: Colors.red.withOpacity(0.18),
             child: ListTile(
-              leading: const Icon(Icons.headphones, color: Colors.deepPurpleAccent),
+              leading: const Icon(Icons.headphones, color: Colors.redAccent),
               title: Text('Listen request from @${friends.incomingListenRequest!.fromUsername}'),
               subtitle: Text(friends.incomingListenRequest!.fromDisplayName),
               trailing: Wrap(spacing: 8, children: [
@@ -68,9 +68,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
         if (friends.activeRoomId != null)
           Card(
-            color: Colors.teal.withOpacity(0.15),
+            color: Colors.red.withOpacity(0.12),
             child: ListTile(
-              leading: const Icon(Icons.headphones, color: Colors.tealAccent),
+              leading: const Icon(Icons.headphones, color: Colors.redAccent),
               title: const Text('Listen together active'),
               subtitle: const Text('You and your friend hear the same songs in sync'),
               trailing: TextButton(onPressed: friends.leaveListenTogether, child: const Text('Disconnect')),

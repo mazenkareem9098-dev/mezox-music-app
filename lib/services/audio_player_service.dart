@@ -145,8 +145,8 @@ class MezoxPlayerController extends ChangeNotifier {
     await handler.playUrl(url, item);
     await handler.setBoostPercent(_volumePercent);
 
-    if (_auth != null && _lyrics != null) {
-      _lyrics!.scheduleFetch(_auth!.api, track);
+    if (_lyrics != null) {
+      _lyrics!.scheduleFetch(track);
     }
     if (!fromSync && _friends != null) {
       _friends!.broadcastPlay(track);

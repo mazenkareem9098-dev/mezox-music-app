@@ -1,25 +1,21 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Holds the public MQTT relay used for friends and listen-together.
+/// No server owned by the user is required: the default is a free public broker.
 class ApiService extends ChangeNotifier {
-  static const String _defaultBaseUrl = String.fromEnvironment(
+  static const String _defaultRelay = String.fromEnvironment(
     'MEZOX_API',
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'broker.hivemq.com',
   );
-  static const String _key = 'mezox_server_url';
+  static const String _key = 'mezox_relay_host';
 
-  String _baseUrl = _defaultBaseUrl;
-  late final Dio dio;
+  String _baseUrl = _defaultRelay;
 
   String get baseUrl => _baseUrl;
+  String get host => _baseUrl;
 
   ApiService() {
-    dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 30),
-    ));
     _load();
   }
 
@@ -27,34 +23,25 @@ class ApiService extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_key);
     if (saved != null && saved.trim().isNotEmpty) {
-      _setBaseUrlInternal(saved.trim());
+      _setInternal(saved);
     }
   }
 
-  void _setBaseUrlInternal(String url) {
-    _baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
-    dio.options.baseUrl = _baseUrl;
+  void _setInternal(String raw) {
+    var s = raw.trim();
+    s = s.replaceFirst(RegExp(r'^(wss?|https?)://'), '');
+    final slash = s.indexOf('/');
+    if (slash > 0) s = s.substring(0, slash);
+    if (s.isEmpty) return;
+    _baseUrl = s;
+    notifyListeners();
   }
 
   Future<void> setBaseUrl(String url) async {
     final clean = url.trim();
     if (clean.isEmpty) return;
-    _setBaseUrlInternal(clean);
+    _setInternal(clean);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, _baseUrl);
-    notifyListeners();
-  }
-
-  String? _token;
-  String? get token => _token;
-
-  void setToken(String? t) {
-    _token = t;
-    if (t != null) {
-      dio.options.headers['Authorization'] = 'Bearer $t';
-    } else {
-      dio.options.headers.remove('Authorization');
-    }
-    notifyListeners();
   }
 }

@@ -233,7 +233,7 @@ class BottomPlayerBar extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Visualizer(playing: player.isPlaying, bars: 10, height: 20),
+                  Visualizer(playing: player.isPlaying, bars: 10, height: 20),
                   IconButton(
                     icon: const Icon(Icons.picture_in_picture_alt_outlined, color: MColors.muted, size: 19),
                     tooltip: 'Mini player',

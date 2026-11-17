@@ -1,111 +1,26 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:audio_service/audio_service.dart';
-import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:flutter/material.dart';
 
+import '../models/album.dart';
 import '../models/track.dart';
 import 'auth_service.dart';
 import 'friends_service.dart';
 import 'library_service.dart';
 import 'lyrics_service.dart';
-import 'youtube_service.dart';
+import 'youtube_player_service.dart';
 
-class MezoxAudioHandler extends BaseAudioHandler with SeekHandler {
-  final AudioPlayer _player = AudioPlayer();
-  AndroidLoudnessEnhancer? _enhancer;
-
-  AudioPlayer get player => _player;
-
-  MezoxAudioHandler() {
-    _init();
-  }
-
-  Future<void> _init() async {
-    try {
-      final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration.music());
-    } catch (_) {}
-    try {
-      _enhancer = AndroidLoudnessEnhancer();
-      await _enhancer!.setEnabled(true);
-      await _enhancer!.setTargetGain(0.0);
-    } catch (_) {
-      _enhancer = null;
-    }
-    _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
-  }
-
-  PlaybackState _transformEvent(PlaybackEvent event) {
-    return PlaybackState(
-      controls: [
-        MediaControl.skipToPrevious,
-        _player.playing ? MediaControl.pause : MediaControl.play,
-        MediaControl.stop,
-        MediaControl.skipToNext,
-      ],
-      systemActions: const {MediaAction.seek},
-      androidCompactActionIndices: const [0, 1, 3],
-      processingState: const {
-        ProcessingState.idle: AudioProcessingState.idle,
-        ProcessingState.loading: AudioProcessingState.loading,
-        ProcessingState.buffering: AudioProcessingState.buffering,
-        ProcessingState.ready: AudioProcessingState.ready,
-        ProcessingState.completed: AudioProcessingState.completed,
-      }[_player.processingState]!,
-      playing: _player.playing,
-      updatePosition: _player.position,
-      bufferedPosition: _player.bufferedPosition,
-      speed: _player.speed,
-      queueIndex: event.currentIndex,
-    );
-  }
-
-  Future<void> setBoostPercent(int percent) async {
-    final clamped = percent.clamp(100, 300);
-    final linear = clamped / 100.0;
-    final gainMb = 20.0 * (math.log(linear) / math.ln10) * 100.0;
-    try {
-      await _enhancer?.setTargetGain(gainMb);
-    } catch (_) {}
-    await _player.setVolume(1.0);
-  }
-
-  @override
-  Future<void> play() => _player.play();
-  @override
-  Future<void> pause() => _player.pause();
-  @override
-  Future<void> stop() => _player.stop();
-  @override
-  Future<void> seek(Duration position) => _player.seek(position);
-
-  /// YouTube audio links reject requests without these headers on some networks.
-  Future<void> playUrl(String url, MediaItem item) async {
-    mediaItem.add(item);
-    await _player.setAudioSource(
-      AudioSource.uri(
-        Uri.parse(url),
-        headers: const <String, String>{
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          'Referer': 'https://www.youtube.com/',
-        },
-      ),
-    );
-    await _player.play();
-  }
-
-  Future<void> disposeHandler() async {
-    await _player.dispose();
-  }
-}
-
+/// High-level playback, queue and history controller.
+///
+/// Actual playback runs through [YouTubePlayerService] (official IFrame API).
 class MezoxPlayerController extends ChangeNotifier {
-  final MezoxAudioHandler handler;
+  MezoxPlayerController(this.player);
+
+  final YouTubePlayerService player;
+
   AuthService? _auth;
-  YouTubeService? _yt;
   LibraryService? _library;
   FriendsService? _friends;
   LyricsService? _lyrics;
@@ -113,37 +28,54 @@ class MezoxPlayerController extends ChangeNotifier {
   Track? _current;
   List<Track> _queue = <Track>[];
   int _queueIndex = -1;
+  int _lastPlayerState = -1;
+  bool _shuffle = false;
   bool _repeatOne = false;
   bool _repeatAll = false;
-  int _volumePercent = 100;
+  bool _visualizerFullscreen = false;
 
   Track? get current => _current;
   List<Track> get queue => List.unmodifiable(_queue);
+  int get queueIndex => _queueIndex;
+  bool get isPlaying => player.isPlaying;
+  bool get isBuffering => player.isBuffering;
+  Duration get position => player.position;
+  Duration get duration => player.duration;
+  double get volume => player.volume;
+  bool get muted => player.muted;
+  String? get error => player.error;
+  bool get shuffle => _shuffle;
   bool get repeatOne => _repeatOne;
   bool get repeatAll => _repeatAll;
-  int get volumePercent => _volumePercent;
-  AudioPlayer get player => handler.player;
-
-  MezoxPlayerController(this.handler) {
-    handler.player.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed) {
-        _onCompleted();
-      }
-    });
-  }
+  bool get visualizerFullscreen => _visualizerFullscreen;
 
   void bind({
     required AuthService auth,
-    required YouTubeService yt,
     required LibraryService library,
     required FriendsService friends,
     required LyricsService lyrics,
   }) {
     _auth = auth;
-    _yt = yt;
     _library = library;
     _friends = friends;
     _lyrics = lyrics;
+  }
+
+  Widget buildVideoView({Key? key}) => player.buildView(key: key);
+
+  void attach() {
+    player.addListener(_onPlayerChanged);
+  }
+
+  void _onPlayerChanged() {
+    final state = player.state;
+    if (state == 0 && _lastPlayerState == 1 && _queue.isNotEmpty) {
+      _lastPlayerState = state;
+      nextTrack();
+      return;
+    }
+    _lastPlayerState = state;
+    notifyListeners();
   }
 
   Future<void> playQueue(List<Track> tracks, int index) async {
@@ -153,54 +85,72 @@ class MezoxPlayerController extends ChangeNotifier {
     await playTrack(_queue[index]);
   }
 
+  Future<void> playPlaylist(Album album, {bool shuffled = false}) async {
+    if (album.tracks.isEmpty) return;
+    final tracks = List<Track>.from(album.tracks);
+    if (shuffled) tracks.shuffle();
+    await playQueue(tracks, 0);
+  }
+
   Future<void> playTrack(Track track, {bool fromSync = false}) async {
     _current = track;
+    if (_queueIndex < 0 || _queue.isEmpty) {
+      _queue = <Track>[track];
+      _queueIndex = 0;
+    }
+    _lastPlayerState = -1;
     notifyListeners();
 
-    final item = MediaItem(
-      id: track.id,
-      title: track.title,
-      artist: track.artist,
-      artUri: track.artworkUrl.isNotEmpty ? Uri.parse(track.artworkUrl) : null,
-      duration: track.duration,
-    );
+    await _library?.recordPlay(track);
+    _lyrics?.scheduleFetch(track);
+    if (!fromSync) _friends?.broadcastPlay(track);
+    await player.load(track.sourceId);
+  }
 
-    final urls = await _yt?.getAudioUrls(track.sourceId) ?? <String>[];
-    var started = false;
-    for (final url in urls) {
-      try {
-        await handler.playUrl(url, item);
-        await Future<void>.delayed(const Duration(milliseconds: 350));
-        if (handler.player.playing) {
-          started = true;
-          break;
-        }
-      } catch (_) {
-        continue;
-      }
-    }
-    if (!started) {
-      await handler.stop();
-      return;
-    }
-    await handler.setBoostPercent(_volumePercent);
+  Future<void> play() async {
+    await player.play();
+    notifyListeners();
+  }
 
-    if (_lyrics != null) {
-      _lyrics!.scheduleFetch(track);
-    }
-    if (!fromSync && _friends != null) {
-      _friends!.broadcastPlay(track);
-    }
+  Future<void> pause() async {
+    await player.pause();
+    notifyListeners();
+  }
+
+  Future<void> togglePlayPause() async {
+    if (_current == null) return;
+    await player.togglePlayPause();
+    notifyListeners();
+  }
+
+  Future<void> seek(Duration position) async {
+    await player.seek(position);
+    notifyListeners();
+  }
+
+  Future<void> setVolume(double value) async {
+    await player.setVolume(value);
+    await _library?.setSetting('volume', value);
+    notifyListeners();
+  }
+
+  Future<void> toggleMute() async {
+    await player.setMuted(!player.muted);
+    notifyListeners();
   }
 
   Future<void> nextTrack() async {
     if (_queue.isEmpty) return;
-    if (_queueIndex + 1 >= _queue.length) {
-      if (_repeatAll) {
-        _queueIndex = 0;
-      } else {
-        return;
+    if (_shuffle && _queue.length > 1) {
+      final rnd = math.Random();
+      var next = _queueIndex;
+      while (next == _queueIndex) {
+        next = rnd.nextInt(_queue.length);
       }
+      _queueIndex = next;
+    } else if (_queueIndex + 1 >= _queue.length) {
+      if (!_repeatAll) return;
+      _queueIndex = 0;
     } else {
       _queueIndex++;
     }
@@ -209,20 +159,60 @@ class MezoxPlayerController extends ChangeNotifier {
 
   Future<void> previousTrack() async {
     if (_queue.isEmpty) return;
+    if (player.position > const Duration(seconds: 3)) {
+      await seek(Duration.zero);
+      return;
+    }
     if (_queueIndex <= 0) {
-      await handler.player.seek(Duration.zero);
+      await seek(Duration.zero);
       return;
     }
     _queueIndex--;
     await playTrack(_queue[_queueIndex]);
   }
 
-  void _onCompleted() {
-    if (_repeatOne && _current != null) {
-      playTrack(_current!);
-    } else {
-      nextTrack();
+  void addToQueue(Track t) {
+    _queue.add(t);
+    notifyListeners();
+  }
+
+  void removeFromQueue(int index) {
+    if (index < 0 || index >= _queue.length || index == _queueIndex) return;
+    _queue.removeAt(index);
+    if (index < _queueIndex) _queueIndex--;
+    notifyListeners();
+  }
+
+  void moveInQueue(int oldIndex, int newIndex) {
+    if (oldIndex < 0 ||
+        oldIndex >= _queue.length ||
+        newIndex < 0 ||
+        newIndex >= _queue.length) {
+      return;
     }
+    final t = _queue.removeAt(oldIndex);
+    _queue.insert(newIndex, t);
+    if (oldIndex == _queueIndex) {
+      _queueIndex = newIndex;
+    } else if (oldIndex < _queueIndex && newIndex >= _queueIndex) {
+      _queueIndex--;
+    } else if (oldIndex > _queueIndex && newIndex <= _queueIndex) {
+      _queueIndex++;
+    }
+    notifyListeners();
+  }
+
+  void clearQueue() {
+    final keep = _current;
+    _queue = keep == null ? <Track>[] : <Track>[keep];
+    _queueIndex = keep == null ? -1 : 0;
+    notifyListeners();
+  }
+
+  void toggleShuffle() {
+    _shuffle = !_shuffle;
+    _library?.setSetting('shuffle', _shuffle);
+    notifyListeners();
   }
 
   void toggleRepeatOne() {
@@ -237,18 +227,21 @@ class MezoxPlayerController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setVolumePercent(int p) async {
-    _volumePercent = p.clamp(100, 300);
-    await handler.setBoostPercent(_volumePercent);
+  void setFullscreen(bool value) {
+    _visualizerFullscreen = value;
     notifyListeners();
   }
 
-  Future<void> togglePlayPause() async {
-    if (handler.player.playing) {
-      await handler.pause();
-    } else {
-      await handler.play();
-    }
+  Future<void> toggleFavourite() async {
+    final t = _current;
+    if (t == null) return;
+    await _library?.toggleFavourite(t);
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    player.removeListener(_onPlayerChanged);
+    super.dispose();
   }
 }

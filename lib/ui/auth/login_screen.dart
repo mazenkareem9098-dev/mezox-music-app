@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
         content: TextField(
           controller: ctrl,
           decoration: const InputDecoration(
-            hintText: 'https://your-server.run.app',
+            hintText: 'broker.hivemq.com',
             border: OutlineInputBorder(),
           ),
         ),
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: () => _editServer(api),
-                  child: Text('Server: ${api.baseUrl} (tap to change)',
+                  child: Text('Relay: ${api.baseUrl} (tap to change)',
                       textAlign: TextAlign.center, style: const TextStyle(color: Colors.tealAccent, fontSize: 12)),
                 ),
                 const SizedBox(height: 20),
@@ -87,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'الاسم ده هيكون اسم الحساب. استخدمه عشان تضيف أصحابك وتعمل Listen Together عبر الإنترنت.',
+                  'الاسم ده هيكون اسم الحساب. استخدمه عشان تضيف أصحابك وتعمل Listen Together عبر الإنترنت بدون أي سيرفر خاص.',
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 16),

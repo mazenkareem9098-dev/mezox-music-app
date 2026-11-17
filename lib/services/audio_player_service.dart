@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -22,6 +24,10 @@ class MezoxAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> _init() async {
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.music());
+    } catch (_) {}
     try {
       _enhancer = AndroidLoudnessEnhancer();
       await _enhancer!.setEnabled(true);
@@ -58,10 +64,9 @@ class MezoxAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> setBoostPercent(int percent) async {
-    // 100% = unity, 300% = 3x amplitude (~+9.54 dB) via enhancer on supported Android.
     final clamped = percent.clamp(100, 300);
     final linear = clamped / 100.0;
-    final gainMb = (20.0 * (math.log(linear) / math.ln10) * 100.0);
+    final gainMb = 20.0 * (math.log(linear) / math.ln10) * 100.0;
     try {
       await _enhancer?.setTargetGain(gainMb);
     } catch (_) {}
@@ -77,9 +82,18 @@ class MezoxAudioHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> seek(Duration position) => _player.seek(position);
 
+  /// YouTube audio links reject requests without these headers on some networks.
   Future<void> playUrl(String url, MediaItem item) async {
     mediaItem.add(item);
-    await _player.setUrl(url);
+    await _player.setAudioSource(
+      AudioSource.uri(
+        Uri.parse(url),
+        headers: const <String, String>{
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          'Referer': 'https://www.youtube.com/',
+        },
+      ),
+    );
     await _player.play();
   }
 
@@ -97,11 +111,14 @@ class MezoxPlayerController extends ChangeNotifier {
   LyricsService? _lyrics;
 
   Track? _current;
+  List<Track> _queue = <Track>[];
+  int _queueIndex = -1;
   bool _repeatOne = false;
   bool _repeatAll = false;
-  int _volumePercent = 100; // 100..300
+  int _volumePercent = 100;
 
   Track? get current => _current;
+  List<Track> get queue => List.unmodifiable(_queue);
   bool get repeatOne => _repeatOne;
   bool get repeatAll => _repeatAll;
   int get volumePercent => _volumePercent;
@@ -129,11 +146,16 @@ class MezoxPlayerController extends ChangeNotifier {
     _lyrics = lyrics;
   }
 
+  Future<void> playQueue(List<Track> tracks, int index) async {
+    if (tracks.isEmpty || index < 0 || index >= tracks.length) return;
+    _queue = List<Track>.from(tracks);
+    _queueIndex = index;
+    await playTrack(_queue[index]);
+  }
+
   Future<void> playTrack(Track track, {bool fromSync = false}) async {
     _current = track;
     notifyListeners();
-
-    final url = await _yt!.getAudioUrl(track.sourceId);
 
     final item = MediaItem(
       id: track.id,
@@ -142,7 +164,25 @@ class MezoxPlayerController extends ChangeNotifier {
       artUri: track.artworkUrl.isNotEmpty ? Uri.parse(track.artworkUrl) : null,
       duration: track.duration,
     );
-    await handler.playUrl(url, item);
+
+    final urls = await _yt?.getAudioUrls(track.sourceId) ?? <String>[];
+    var started = false;
+    for (final url in urls) {
+      try {
+        await handler.playUrl(url, item);
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        if (handler.player.playing) {
+          started = true;
+          break;
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+    if (!started) {
+      await handler.stop();
+      return;
+    }
     await handler.setBoostPercent(_volumePercent);
 
     if (_lyrics != null) {
@@ -153,11 +193,35 @@ class MezoxPlayerController extends ChangeNotifier {
     }
   }
 
+  Future<void> nextTrack() async {
+    if (_queue.isEmpty) return;
+    if (_queueIndex + 1 >= _queue.length) {
+      if (_repeatAll) {
+        _queueIndex = 0;
+      } else {
+        return;
+      }
+    } else {
+      _queueIndex++;
+    }
+    await playTrack(_queue[_queueIndex]);
+  }
+
+  Future<void> previousTrack() async {
+    if (_queue.isEmpty) return;
+    if (_queueIndex <= 0) {
+      await handler.player.seek(Duration.zero);
+      return;
+    }
+    _queueIndex--;
+    await playTrack(_queue[_queueIndex]);
+  }
+
   void _onCompleted() {
     if (_repeatOne && _current != null) {
       playTrack(_current!);
-    } else if (_repeatAll && _current != null) {
-      playTrack(_current!);
+    } else {
+      nextTrack();
     }
   }
 

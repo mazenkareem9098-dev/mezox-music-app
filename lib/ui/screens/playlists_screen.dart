@@ -13,7 +13,6 @@ import '../widgets/track_tile.dart';
 
 /// Bottom sheet: add [track] to any local playlist, or create one first.
 void showAddToPlaylistSheet(BuildContext context, Track track) {
-  final lib = context.read<LibraryService>();
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: MColors.surface,
@@ -22,7 +21,9 @@ void showAddToPlaylistSheet(BuildContext context, Track track) {
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       side: BorderSide(color: MColors.glassBorder),
     ),
-    builder: (sheetContext) => SafeArea(
+    builder: (sheetContext) {
+      final lib = sheetContext.watch<LibraryService>();
+      return SafeArea(
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(sheetContext).size.height * 0.72,
@@ -132,7 +133,8 @@ void showAddToPlaylistSheet(BuildContext context, Track track) {
           ],
         ),
       ),
-    ),
+      );
+    },
   );
 }
 

@@ -17,7 +17,7 @@ class PlayerBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF141420),
+        color: const Color(0xFF141414),
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
       ),
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -41,7 +41,7 @@ class PlayerBar extends StatelessWidget {
                 ]),
               ),
               IconButton(
-                icon: Icon(lib.isFavourite(track.id) ? Icons.favorite : Icons.favorite_border, color: Colors.pinkAccent),
+                icon: Icon(lib.isFavourite(track.id) ? Icons.favorite : Icons.favorite_border, color: Colors.redAccent),
                 onPressed: () => lib.toggleFavourite(track),
               ),
               IconButton(icon: const Icon(Icons.skip_previous), onPressed: () => player.player.seek(Duration.zero)),
@@ -56,12 +56,12 @@ class PlayerBar extends StatelessWidget {
                 },
               ),
               IconButton(
-                icon: Icon(Icons.repeat_one, color: player.repeatOne ? Colors.tealAccent : Colors.white54),
+                icon: Icon(Icons.repeat_one, color: player.repeatOne ? Colors.redAccent : Colors.white54),
                 tooltip: 'Repeat song',
                 onPressed: player.toggleRepeatOne,
               ),
               IconButton(
-                icon: Icon(Icons.repeat, color: player.repeatAll ? Colors.tealAccent : Colors.white54),
+                icon: Icon(Icons.repeat, color: player.repeatAll ? Colors.redAccent : Colors.white54),
                 tooltip: 'Repeat all',
                 onPressed: player.toggleRepeatAll,
               ),

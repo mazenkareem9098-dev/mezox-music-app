@@ -452,6 +452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           options: _languageOptions,
           onChanged: (v) async {
             await _write<String>('language', v);
+            await _write<bool>('rtl', v == 'ar');
             if (context.mounted) MToast.show(context, 'Language set to ${_languageOptions[v] ?? v}');
           },
         ),

@@ -59,6 +59,12 @@ class MezoxPlayerController extends ChangeNotifier {
     _library = library;
     _friends = friends;
     _lyrics = lyrics;
+    final savedVolume = library.getSetting<double>('volume', 0.8);
+    if (savedVolume > 0.2) {
+      player.setVolume(savedVolume.clamp(0.5, 1.0).toDouble());
+    } else {
+      player.setVolume(0.8);
+    }
   }
 
   Widget buildVideoView({Key? key}) => player.buildView(key: key);

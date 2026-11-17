@@ -63,6 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Image.asset('assets/logo.png', height: 110, fit: BoxFit.contain),
+                const SizedBox(height: 12),
                 const Text('MEZOX MUSIC',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, letterSpacing: 2)),
@@ -73,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 InkWell(
                   onTap: () => _editServer(api),
                   child: Text('Relay: ${api.baseUrl} (tap to change)',
-                      textAlign: TextAlign.center, style: const TextStyle(color: Colors.tealAccent, fontSize: 12)),
+                      textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
                 ),
                 const SizedBox(height: 20),
                 TextField(

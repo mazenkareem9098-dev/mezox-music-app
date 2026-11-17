@@ -116,7 +116,9 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
     }
     _settingsLoaded = true;
     final volume = library.getSetting<double>('volume', 0.8);
-    context.read<MezoxPlayerController>().setVolume(volume.clamp(0.0, 1.0));
+    context
+        .read<MezoxPlayerController>()
+        .setVolume(volume.clamp(0.0, 1.0).toDouble());
   }
 
   @override

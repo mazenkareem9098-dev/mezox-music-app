@@ -53,7 +53,10 @@ class LyricsService extends ChangeNotifier {
         _currentLyrics = (synced ?? plain ?? '').trim();
       }
       if (_currentLyrics.isEmpty) {
-        final fallback = Uri.https('api.lyrics.ovh', '/v1/${track.artist}/${track.title}');
+        final fallback = Uri.https(
+          'api.lyrics.ovh',
+          '/v1/${Uri.encodeComponent(track.artist)}/${Uri.encodeComponent(track.title)}',
+        );
         final alt = await http.get(fallback).timeout(const Duration(seconds: 12));
         if (alt.statusCode == 200) {
           final body = jsonDecode(alt.body) as Map<String, dynamic>;

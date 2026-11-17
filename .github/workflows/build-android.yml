@@ -24,6 +24,11 @@ jobs:
           channel: 'stable'
       - name: Install dependencies
         run: flutter pub get
+      - name: Patch inappwebview for AGP 9
+        run: |
+          FILE=$(find "$HOME/.pub-cache" -path '*flutter_inappwebview_android*/android/build.gradle' | head -n 1)
+          sed -i "s/proguard-android.txt/proguard-android-optimize.txt/g" "$FILE"
+          grep -n 'proguard-android' "$FILE"
       - name: Build release APK
         run: flutter build apk --release --dart-define=MEZOX_API=${{ github.event.inputs.mezox_relay || 'broker.hivemq.com' }}
       - name: Rename APK

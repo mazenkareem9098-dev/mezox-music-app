@@ -44,7 +44,7 @@ class LyricsService extends ChangeNotifier {
         'artist_name': track.artist,
       });
       final res = await http
-          .get(uri, headers: {'User-Agent': 'MEZOX MUSIC/1.0'})
+          .get(uri, headers: {'User-Agent': 'M MUSIC/1.0'})
           .timeout(const Duration(seconds: 12));
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body) as Map<String, dynamic>;

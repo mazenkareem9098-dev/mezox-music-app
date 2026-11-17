@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'services/api_service.dart';
 import 'services/audio_player_service.dart';
@@ -16,6 +19,22 @@ late MezoxAudioHandler audioHandler;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    await windowManager.ensureInitialized();
+    await windowManager.waitUntilReadyToShow(
+      const WindowOptions(
+        size: Size(1180, 760),
+        minimumSize: Size(820, 560),
+        center: true,
+        title: 'MEZOX MUSIC',
+      ),
+      () async {
+        await windowManager.setAsFrameless();
+        await windowManager.show();
+        await windowManager.focus();
+      },
+    );
+  }
   audioHandler = await AudioService.init(
     builder: () => MezoxAudioHandler(),
     config: const AudioServiceConfig(

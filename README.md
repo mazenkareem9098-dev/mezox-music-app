@@ -1,37 +1,49 @@
-# MEZOX MUSIC (Client)
+# MEZOX MUSIC — Client
 
-Flutter app — **Android APK** and **Windows EXE** from one codebase (YouTube-only, no in-player ads).
+YouTube-only music player for Android APK and Windows EXE. No ads in playback, name-only sign up, and Listen Together over the internet **without owning a server**.
 
-## Features
-- Search & play any song on YouTube via direct audio stream (`youtube_explode_dart` + `just_audio`).
-- Repeat one / repeat all.
-- Volume boost 100%–300% (Android loudness enhancer; Windows follows system/mixer headroom).
-- Favourites (♥) and albums (create/add/remove/delete).
-- Friends by username: invite/accept + listen-together real-time sync (Socket.IO).
-- Song lyrics appear ~10s after playback starts (fetched from lyrics sources via server, no AI key required).
-- Sign up: write your name only; the app creates/reuses an account on the server. Account name is used to add friends and listen together over the internet. No password or external login.
+## What changed
 
-## Prepare project (if platform folders missing)
+The app no longer depends on a MEZOX backend. All multiplayer features now run over a free public MQTT relay (`broker.hivemq.com` by default):
+
+- Sign up with a name only — the profile is stored on the device.
+- Add friends by their username.
+- Friend request → accept.
+- Listen Together: request → accept → synced playback → Disconnect back to solo.
+- Lyrics are fetched directly from LRCLIB / lyrics.ovh after 10 seconds — no AI key.
+- Music comes from YouTube audio streams through `youtube_explode_dart`.
+
+No Render, Fly.io, Cloud Run, domain, port forwarding, or public IP is needed.
+
+## Relay
+
+The relay can be changed from the sign-up screen (tap the `Relay:` line) or at build time:
+
 ```bash
-cd mezox_app
-# If android/ios/windows folders are missing, generate Flutter scaffolding:
-flutter create --project-name mezox_music --org com.mezox .
-# Then keep this repo's lib/, pubspec.yaml, and android/app/src/main/AndroidManifest.xml overrides.
+flutter build apk --release --dart-define=MEZOX_API=broker.hivemq.com
+```
+
+Any public MQTT-over-WebSocket broker on port `8884` works. The default is HiveMQ's public broker, which needs no account.
+
+## Build locally
+
+```bash
 flutter pub get
+flutter build apk --release
+flutter build windows --release
 ```
 
-## Run & build
-```bash
-# Android APK
-flutter build apk --release --dart-define=MEZOX_API=https://your-server-host
-# -> build/app/outputs/flutter-apk/app-release.apk
+## Build on GitHub
 
-# Windows EXE (on Windows with VS 2022 "Desktop development with C++")
-flutter config --enable-windows-desktop
-flutter build windows --release --dart-define=MEZOX_API=https://your-server-host
-# -> build/windows/x64/runner/Release/ (ship the entire folder)
-```
+Use the **Actions** tabs:
 
-## Branding
-- Android: `applicationId "com.mezox.music"` in `android/app/build.gradle`, label/icon in manifest & mipmaps.
-- Windows: set window title `L"MEZOX MUSIC"` in `windows/runner/main.cpp`, ProductName/FileDescription in `Runner.rc`, icon in `windows/runner/resources/app_icon.ico`.
+- `Build Android APK` → `mezox-music-app/actions/workflows/build-android.yml`
+- `Build Windows EXE` → `mezox-music-app/actions/workflows/build-windows.yml`
+
+Both workflows are `workflow_dispatch` with an optional relay host input; the default is `broker.hivemq.com`. Artifacts are attached to the successful run.
+
+## Notes
+
+- Both devices need internet access and must use the same relay host.
+- Usernames are public on the relay; pick a name your friends will recognise.
+- The server repo (`mezox-music-server`) is kept for optional self-hosted use, but the app does not require it.

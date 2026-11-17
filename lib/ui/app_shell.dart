@@ -92,6 +92,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_handleGlobalKey);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final search = context.read<SearchQueryService>();
       search.addListener(() {
@@ -143,6 +144,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalKey);
     _titleSearch.dispose();
     super.dispose();
   }
@@ -154,51 +156,142 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
     });
   }
 
+  void _openFriendsDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: MColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: MColors.primary.withOpacity(0.4)),
+        ),
+        child: SizedBox(
+          width: 620,
+          height: 520,
+          child: const Scaffold(
+            backgroundColor: Colors.transparent,
+            body: FriendsScreen(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _signOut() async {
+    final friends = context.read<FriendsService>();
+    friends.leaveListenTogether();
+    friends.disconnectSocket();
+    await context.read<AuthService>().logout();
+  }
+
+  Widget _overflowMenuButton() {
+    return PopupMenuButton<String>(
+      tooltip: 'Menu',
+      color: MColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: MColors.primary.withOpacity(0.4)),
+      ),
+      icon: const Icon(Icons.more_vert, color: MColors.muted),
+      onSelected: (value) {
+        switch (value) {
+          case 'home':
+            _go(MMainPage.home);
+            break;
+          case 'search':
+            _go(MMainPage.search);
+            break;
+          case 'library':
+            _go(MMainPage.library);
+            break;
+          case 'settings':
+            _go(MMainPage.settings);
+            break;
+          case 'friends':
+            _openFriendsDialog();
+            break;
+          case 'about':
+            _go(MMainPage.about);
+            break;
+          case 'logout':
+            _signOut();
+            break;
+        }
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'home', child: Text('Home', style: TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'search', child: Text('Search', style: TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'library', child: Text('Your Library', style: TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'friends', child: Text('Friends & Listen Together', style: TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'settings', child: Text('Settings', style: TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'about', child: Text('About M MUSIC', style: TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'logout', child: Text('Sign out', style: TextStyle(color: MColors.muted))),
+      ],
+    );
+  }
+
+  Widget _backButton() {
+    if (_page == MMainPage.home) return const SizedBox.shrink();
+    return IconButton(
+      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+      tooltip: 'Back',
+      onPressed: () => _go(MMainPage.home),
+    );
+  }
+
   Future<void> _toggleWindowFullscreen() async {
     if (!_isDesktop) return;
     _windowFull = !_windowFull;
     await windowManager.setFullScreen(_windowFull);
   }
 
-  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-    final focused = FocusManager.instance.primaryFocus?.runtimeType.toString() ?? '';
-    if (focused.contains('EditableText')) return KeyEventResult.ignored;
+  bool _textInputHasFocus() {
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus == null) return false;
+    final widget = focus.context?.widget;
+    if (widget == null) return false;
+    final name = widget.runtimeType.toString();
+    return name.contains('EditableText') ||
+        widget.toStringShort().contains('EditableText');
+  }
+
+  bool _handleGlobalKey(KeyEvent event) {
+    if (event is! KeyDownEvent || !mounted) return false;
+    if (_textInputHasFocus()) return false;
+
     final player = context.read<MezoxPlayerController>();
     final key = event.logicalKey;
     if (key == LogicalKeyboardKey.space) {
       player.togglePlayPause();
-      return KeyEventResult.handled;
+      return true;
     }
     if (key == LogicalKeyboardKey.arrowRight) {
       player.nextTrack();
-      return KeyEventResult.handled;
+      return true;
     }
     if (key == LogicalKeyboardKey.arrowLeft) {
       player.previousTrack();
-      return KeyEventResult.handled;
+      return true;
     }
     if (key == LogicalKeyboardKey.keyM) {
       player.toggleMute();
-      return KeyEventResult.handled;
+      return true;
     }
     if (key == LogicalKeyboardKey.keyF) {
-      if (_fullscreen) {
-        setState(() => _fullscreen = false);
-      } else {
-        _toggleWindowFullscreen();
-      }
-      return KeyEventResult.handled;
+      setState(() => _fullscreen = !_fullscreen);
+      return true;
     }
     if (key == LogicalKeyboardKey.escape) {
       if (_fullscreen) {
         setState(() => _fullscreen = false);
       } else if (_showQueue) {
         setState(() => _showQueue = false);
+      } else {
+        return false;
       }
-      return KeyEventResult.handled;
+      return true;
     }
-    return KeyEventResult.ignored;
+    return false;
   }
 
   Widget _buildPages() {
@@ -241,7 +334,8 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
       ),
       child: Row(
         children: [
-          const SizedBox(width: 14),
+          const SizedBox(width: 6),
+          _backButton(),
           const MLogo(size: 26),
           const SizedBox(width: 10),
           const Text(
@@ -267,6 +361,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             ),
           ),
           const Expanded(child: DragToMoveArea(child: SizedBox.expand())),
+          _overflowMenuButton(),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: MColors.muted, size: 19),
             tooltip: 'Notifications',
@@ -472,6 +567,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
       ),
       child: Row(
         children: [
+          _backButton(),
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: () => Scaffold.of(context).openDrawer(),
@@ -487,6 +583,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             icon: const Icon(Icons.search, color: Colors.white),
             onPressed: () => _go(MMainPage.search),
           ),
+          _overflowMenuButton(),
         ],
       ),
     );
@@ -498,9 +595,22 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
     final showSidePanel = width >= 1180;
     final player = context.watch<MezoxPlayerController>();
 
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _onKey,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_fullscreen) {
+          setState(() => _fullscreen = false);
+          return false;
+        }
+        if (_showQueue) {
+          setState(() => _showQueue = false);
+          return false;
+        }
+        if (_page != MMainPage.home) {
+          _go(MMainPage.home);
+          return false;
+        }
+        return true;
+      },
       child: Stack(
         children: [
           AnimatedRedBackdrop(

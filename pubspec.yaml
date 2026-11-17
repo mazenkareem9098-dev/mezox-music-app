@@ -1,10 +1,10 @@
 name: mezox_music
-description: MEZOX MUSIC - YouTube, no ads, serverless listen together
+description: M MUSIC - a red & black glass music streaming experience powered by YouTube
 publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -16,11 +16,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   uuid: ^4.5.1
   mqtt_client: ^10.14.0
-  just_audio: ^0.9.40
-  just_audio_windows: ^0.2.2
-  audio_service: ^0.18.15
-  audio_session: ^0.1.21
-  youtube_explode_dart: ^3.1.0
+  flutter_inappwebview: ^6.1.5
   window_manager: ^0.4.3
 
 dev_dependencies:

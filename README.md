@@ -1,49 +1,42 @@
-# MEZOX MUSIC — Client
+# M MUSIC
 
-YouTube-only music player for Android APK and Windows EXE. No ads in playback, name-only sign up, and Listen Together over the internet **without owning a server**.
+**Listen. Enjoy. Repeat.**
 
-## What changed
+A red & black glassmorphism music streaming client for Windows and Android, built with Flutter and powered by YouTube.
 
-The app no longer depends on a MEZOX backend. All multiplayer features now run over a free public MQTT relay (`broker.hivemq.com` by default):
+## Features
 
-- Sign up with a name only — the profile is stored on the device.
-- Add friends by their username.
-- Friend request → accept.
-- Listen Together: request → accept → synced playback → Disconnect back to solo.
-- Lyrics are fetched directly from LRCLIB / lyrics.ovh after 10 seconds — no AI key.
-- Music comes from YouTube audio streams through `youtube_explode_dart`.
+- Custom frameless desktop title bar with working minimize / maximize / close.
+- Fixed glass sidebar: Home, Explore, Search, Library, Liked Songs, Playlists, Artists, Albums, Podcasts, History, Settings, Premium, About.
+- Cinematic home dashboard with real YouTube-backed sections: Made For You, Trending Now, Recently Played, Recommended, Popular Artists, New Releases.
+- Live search suggestions and category filters for songs, videos, artists, playlists and albums.
+- Official YouTube IFrame Player API playback — no direct stream extraction, no ad removal.
+- Now Playing glass panel with visualizer, lyrics, like, playlist add and reorderable queue.
+- Permanent bottom player with shuffle, previous, play/pause, next, repeat, progress, volume, mini player, full screen and queue.
+- Full-screen immersive player.
+- Local playlists, favourites, history, search history and preferences via SharedPreferences.
+- Listen Together over a public MQTT relay (name-only sign up, no private server).
+- Keyboard shortcuts: Space, ←, →, M, F, Esc.
 
-No Render, Fly.io, Cloud Run, domain, port forwarding, or public IP is needed.
+## Build
 
-## Relay
-
-The relay can be changed from the sign-up screen (tap the `Relay:` line) or at build time:
-
-```bash
-flutter build apk --release --dart-define=MEZOX_API=broker.hivemq.com
-```
-
-Any public MQTT-over-WebSocket broker on port `8884` works. The default is HiveMQ's public broker, which needs no account.
-
-## Build locally
+Android:
 
 ```bash
 flutter pub get
-flutter build apk --release
-flutter build windows --release
+flutter build apk --release --dart-define=MEZOX_API=broker.hivemq.com
 ```
 
-## Build on GitHub
+Windows:
 
-Use the **Actions** tabs:
+```bash
+flutter config --enable-windows-desktop
+flutter pub get
+flutter build windows --release --dart-define=MEZOX_API=broker.hivemq.com
+```
 
-- `Build Android APK` → `mezox-music-app/actions/workflows/build-android.yml`
-- `Build Windows EXE` → `mezox-music-app/actions/workflows/build-windows.yml`
+GitHub Actions builds both platforms on every push to `main`.
 
-Both workflows are `workflow_dispatch` with an optional relay host input; the default is `broker.hivemq.com`. Artifacts are attached to the successful run.
+## YouTube Data API (optional)
 
-## Notes
-
-- Both devices need internet access and must use the same relay host.
-- Usernames are public on the relay; pick a name your friends will recognise.
-- The server repo (`mezox-music-server`) is kept for optional self-hosted use, but the app does not require it.
+Open Settings and enter a YouTube Data API v3 key for higher-quality metadata and durations. Without a key the app uses public metadata frontends. Playback always uses YouTube's official IFrame player.

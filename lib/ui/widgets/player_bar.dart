@@ -44,7 +44,11 @@ class PlayerBar extends StatelessWidget {
                 icon: Icon(lib.isFavourite(track.id) ? Icons.favorite : Icons.favorite_border, color: Colors.redAccent),
                 onPressed: () => lib.toggleFavourite(track),
               ),
-              IconButton(icon: const Icon(Icons.skip_previous), onPressed: () => player.player.seek(Duration.zero)),
+              IconButton(
+                icon: const Icon(Icons.skip_previous),
+                tooltip: 'Previous song',
+                onPressed: player.previousTrack,
+              ),
               StreamBuilder<bool>(
                 stream: player.player.playingStream,
                 builder: (_, snap) {
@@ -54,6 +58,11 @@ class PlayerBar extends StatelessWidget {
                     onPressed: player.togglePlayPause,
                   );
                 },
+              ),
+              IconButton(
+                icon: const Icon(Icons.skip_next),
+                tooltip: 'Next song',
+                onPressed: player.nextTrack,
               ),
               IconButton(
                 icon: Icon(Icons.repeat_one, color: player.repeatOne ? Colors.redAccent : Colors.white54),

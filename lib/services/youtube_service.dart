@@ -12,11 +12,14 @@ import '../models/track.dart';
 /// always handled by the official IFrame API in [YouTubePlayerService].
 class YouTubeService extends ChangeNotifier {
   static const List<String> _frontends = <String>[
+    'https://yt.chocolatemoo53.com',
     'https://pipedapi.kavin.rocks',
     'https://pipedapi.adminforge.de',
     'https://pipedapi.reallyaweso.me',
     'https://pipedapi.leptons.xyz',
   ];
+
+  final Map<String, List<Track>> _cache = <String, List<Track>>{};
 
   String _apiKey = '';
   bool _loading = false;
@@ -42,6 +45,10 @@ class YouTubeService extends ChangeNotifier {
   Future<List<Track>> search(String query, {int limit = 60}) async {
     final q = query.trim();
     if (q.isEmpty) return <Track>[];
+    final cacheKey = '$limit|$q';
+    final cached = _cache[cacheKey];
+    if (cached != null) return cached;
+
     _loading = true;
     _lastError = null;
     notifyListeners();
@@ -56,12 +63,23 @@ class YouTubeService extends ChangeNotifier {
     }
     if (tracks.isEmpty) {
       try {
+        tracks = await _searchInvidious(q, limit);
+      } catch (e) {
+        _lastError ??= 'Invidious: $e';
+      }
+    }
+    if (tracks.isEmpty) {
+      try {
         tracks = await _searchFrontend(q, limit);
       } catch (e) {
         _lastError ??= 'Search unavailable: $e';
       }
     }
 
+    if (tracks.isNotEmpty) {
+      if (_cache.length > 40) _cache.clear();
+      _cache[cacheKey] = tracks;
+    }
     _loading = false;
     notifyListeners();
     return tracks;
@@ -139,15 +157,58 @@ class YouTubeService extends ChangeNotifier {
     }).toList();
   }
 
-  Future<List<Track>> _searchFrontend(String q, int limit) async {
+  /// Primary metadata fallback — Invidious public API (JSON, no captcha).
+  Future<List<Track>> _searchInvidious(String q, int limit) async {
     for (final base in _frontends) {
+      try {
+        final uri = Uri.parse('$base/api/v1/search').replace(
+          queryParameters: <String, String>{'q': q, 'type': 'video'},
+        );
+        final res = await http
+            .get(uri, headers: const {'User-Agent': 'M MUSIC/1.0'})
+            .timeout(const Duration(seconds: 8));
+        if (res.statusCode != 200) continue;
+        final decoded = jsonDecode(res.body);
+        if (decoded is! List) continue;
+
+        final out = <Track>[];
+        for (final item in decoded) {
+          if (item is! Map<String, dynamic>) continue;
+          if (item['type']?.toString() != 'video') continue;
+          final id = item['videoId']?.toString() ?? '';
+          if (id.length != 11) continue;
+          final seconds = item['lengthSeconds'] is num
+              ? (item['lengthSeconds'] as num).toInt()
+              : int.tryParse(item['lengthSeconds']?.toString() ?? '');
+          out.add(Track(
+            id: 'yt_$id',
+            title: item['title']?.toString() ?? id,
+            artist: item['author']?.toString() ?? 'YouTube',
+            artworkUrl: 'https://i.ytimg.com/vi/$id/hqdefault.jpg',
+            source: 'youtube',
+            sourceId: id,
+            duration:
+                seconds != null && seconds > 0 ? Duration(seconds: seconds) : null,
+          ));
+          if (out.length >= limit) break;
+        }
+        if (out.isNotEmpty) return out;
+      } catch (_) {
+        continue;
+      }
+    }
+    return <Track>[];
+  }
+
+  Future<List<Track>> _searchFrontend(String q, int limit) async {
+    for (final base in _frontends.skip(1)) {
       try {
         final uri = Uri.parse('$base/search').replace(
           queryParameters: <String, String>{'q': q, 'filter': 'videos'},
         );
         final res = await http
             .get(uri, headers: const {'User-Agent': 'M MUSIC/1.0'})
-            .timeout(const Duration(seconds: 12));
+            .timeout(const Duration(seconds: 8));
         if (res.statusCode != 200) continue;
         final decoded = jsonDecode(res.body);
         if (decoded is! List) continue;

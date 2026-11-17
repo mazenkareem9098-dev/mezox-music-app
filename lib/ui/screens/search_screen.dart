@@ -537,6 +537,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: TextField(
                     controller: _ctrl,
                     onChanged: _onChanged,
+                    textInputAction: TextInputAction.search,
+                    onEditingComplete: () => _runSearch(record: true),
                     onSubmitted: (_) => _runSearch(record: true),
                     decoration: const InputDecoration(
                       hintText: 'ابحث عن أغنية أو فنان... Search songs, artists, videos',

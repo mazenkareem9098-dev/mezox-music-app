@@ -60,6 +60,8 @@ class YouTubePlayerService extends ChangeNotifier {
             callback: (_) {
               _apiReady = true;
               _error = null;
+              setVolume(_volume);
+              if (_muted) setMuted(true);
               notifyListeners();
               final id = _pendingVideoId;
               if (id != null) {
@@ -239,7 +241,9 @@ window.onYouTubeIframeAPIReady = function () {
       },
       onStateChange: function (e) {
         mmSend('mmState', {state: e.data});
-        if (e.data === YT.PlayerState.PAUSED && mmAutoPlayPending) {
+        if ((e.data === YT.PlayerState.PAUSED ||
+             e.data === YT.PlayerState.CUED ||
+             e.data === -1) && mmAutoPlayPending) {
           mmAutoPlayPending = false;
           try { mmPlayer.unMute(); mmPlayer.playVideo(); } catch (err) {}
         }

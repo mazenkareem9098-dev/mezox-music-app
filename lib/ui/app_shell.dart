@@ -348,6 +348,11 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             height: 32,
             child: TextField(
               controller: _titleSearch,
+              textInputAction: TextInputAction.search,
+              onEditingComplete: () {
+                context.read<SearchQueryService>().submit(_titleSearch.text);
+                _go(MMainPage.search);
+              },
               onSubmitted: (v) {
                 context.read<SearchQueryService>().submit(v);
                 _go(MMainPage.search);
@@ -361,6 +366,16 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             ),
           ),
           const Expanded(child: DragToMoveArea(child: SizedBox.expand())),
+          IconButton(
+            icon: const Icon(Icons.home_rounded, color: MColors.muted, size: 19),
+            tooltip: 'Home',
+            onPressed: () => _go(MMainPage.home),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: MColors.muted, size: 19),
+            tooltip: 'Settings',
+            onPressed: () => _go(MMainPage.settings),
+          ),
           _overflowMenuButton(),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: MColors.muted, size: 19),
@@ -431,7 +446,10 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             ),
           ),
           const SizedBox(width: 8),
-          _winButton(Icons.remove, 'Minimize', () => windowManager.minimize()),
+          _winButton(Icons.remove, 'Minimize', () async {
+            await windowManager.focus();
+            await windowManager.minimize();
+          }),
           _winButton(Icons.crop_square, 'Maximize / Restore', () async {
             if (await windowManager.isMaximized()) {
               await windowManager.unmaximize();
@@ -582,6 +600,16 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white),
             onPressed: () => _go(MMainPage.search),
+          ),
+          IconButton(
+            icon: const Icon(Icons.home_rounded, color: Colors.white),
+            tooltip: 'Home',
+            onPressed: () => _go(MMainPage.home),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            tooltip: 'Settings',
+            onPressed: () => _go(MMainPage.settings),
           ),
           _overflowMenuButton(),
         ],

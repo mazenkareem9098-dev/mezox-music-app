@@ -676,6 +676,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
     final width = MediaQuery.of(context).size.width;
     final showSidePanel = width >= 1180;
     final player = context.watch<MezoxPlayerController>();
+    context.watch<LibraryService>();
 
     return WillPopScope(
       onWillPop: () async {
@@ -739,14 +740,14 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
               ),
             ),
           ),
-          // Official YouTube IFrame player — kept mounted but invisible.
+          // YouTube IFrame player — real size offscreen; tiny frames can be refused.
           Positioned(
-            left: 0,
-            top: 0,
-            width: 1,
-            height: 1,
+            left: -1200,
+            top: -900,
+            width: 480,
+            height: 360,
             child: IgnorePointer(
-              child: Opacity(opacity: 0.01, child: player.buildVideoView()),
+              child: Opacity(opacity: 0.02, child: player.buildVideoView()),
             ),
           ),
           if (_fullscreen)

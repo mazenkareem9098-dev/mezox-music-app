@@ -65,14 +65,15 @@ class MezoxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => YouTubePlayerService()),
         ChangeNotifierProxyProvider5<AuthService, LibraryService, FriendsService,
             LyricsService, YouTubePlayerService, MezoxPlayerController>(
-          create: (_, auth, library, friends, lyrics, player) =>
-              MezoxPlayerController(player)
+          create: (context) => MezoxPlayerController(
+                context.read<YouTubePlayerService>(),
+              )
                 ..attach()
                 ..bind(
-                  auth: auth,
-                  library: library,
-                  friends: friends,
-                  lyrics: lyrics,
+                  auth: context.read<AuthService>(),
+                  library: context.read<LibraryService>(),
+                  friends: context.read<FriendsService>(),
+                  lyrics: context.read<LyricsService>(),
                 ),
           update: (_, auth, library, friends, lyrics, player, controller) =>
               controller!

@@ -113,7 +113,7 @@ class NowPlayingPanel extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Visualizer(playing: player.isPlaying, bars: 22, height: 30),
+                  Visualizer(playing: player.isPlaying, bars: 22, height: 30),
                   const Spacer(),
                   Text(
                     player.isBuffering ? 'BUFFERING' : player.isPlaying ? 'PLAYING' : 'PAUSED',

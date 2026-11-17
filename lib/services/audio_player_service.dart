@@ -33,6 +33,8 @@ class MezoxPlayerController extends ChangeNotifier {
   bool _repeatOne = false;
   bool _repeatAll = false;
   bool _visualizerFullscreen = false;
+  Timer? _playNudge;
+  bool _closed = false;
 
   Track? get current => _current;
   List<Track> get queue => List.unmodifiable(_queue);
@@ -111,6 +113,14 @@ class MezoxPlayerController extends ChangeNotifier {
     _lyrics?.scheduleFetch(track);
     if (!fromSync) _friends?.broadcastPlay(track);
     await player.load(track.sourceId);
+
+    _playNudge?.cancel();
+    final requestedId = track.id;
+    _playNudge = Timer(const Duration(milliseconds: 900), () {
+      if (_closed || _current?.id != requestedId) return;
+      if (!player.apiReady || player.isPlaying) return;
+      player.play();
+    });
   }
 
   Future<void> play() async {
@@ -247,6 +257,8 @@ class MezoxPlayerController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _closed = true;
+    _playNudge?.cancel();
     player.removeListener(_onPlayerChanged);
     super.dispose();
   }

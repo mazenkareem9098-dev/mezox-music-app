@@ -337,7 +337,13 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
           ),
           const SizedBox(width: 8),
           _winButton(Icons.remove, 'Minimize', () => windowManager.minimize()),
-          _winButton(Icons.crop_square, 'Maximize / Restore', () => windowManager.maximizeOrRestore()),
+          _winButton(Icons.crop_square, 'Maximize / Restore', () async {
+            if (await windowManager.isMaximized()) {
+              await windowManager.unmaximize();
+            } else {
+              await windowManager.maximize();
+            }
+          }),
           _winButton(Icons.close, 'Close', () => windowManager.close()),
           const SizedBox(width: 4),
         ],

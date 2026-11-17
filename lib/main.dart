@@ -85,14 +85,26 @@ class MezoxApp extends StatelessWidget {
                 ),
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'M MUSIC',
-        theme: MTheme.dark,
-        home: Consumer<AuthService>(
-          builder: (context, auth, _) =>
-              auth.isLoggedIn ? const AppShell() : const LoginScreen(),
-        ),
+      child: Consumer<LibraryService>(
+        builder: (context, library, _) {
+          final lang = library.getSetting<String>('language', 'en');
+          final rtl = library.getSetting<bool>('rtl', lang == 'ar');
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'M MUSIC',
+            theme: MTheme.dark,
+            locale: Locale(lang),
+            supportedLocales: const [Locale('en'), Locale('ar')],
+            builder: (context, child) => Directionality(
+              textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+              child: child ?? const SizedBox.shrink(),
+            ),
+            home: Consumer<AuthService>(
+              builder: (context, auth, _) =>
+                  auth.isLoggedIn ? const AppShell() : const LoginScreen(),
+            ),
+          );
+        },
       ),
     );
   }

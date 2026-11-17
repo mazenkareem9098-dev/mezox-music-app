@@ -204,12 +204,12 @@ class BottomPlayerBar extends StatelessWidget {
 
             // RIGHT — extras
             SizedBox(
-              width: 250,
+              width: 300,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   SizedBox(
-                    width: 100,
+                    width: 176,
                     child: Row(
                       children: [
                         IconButton(
@@ -218,7 +218,7 @@ class BottomPlayerBar extends StatelessWidget {
                                 ? Icons.volume_off
                                 : Icons.volume_up,
                             color: MColors.muted,
-                            size: 19,
+                            size: 22,
                           ),
                           tooltip: 'Mute / unmute',
                           onPressed: player.toggleMute,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../services/audio_player_service.dart';
 import '../../services/library_service.dart';
 import '../../services/lyrics_service.dart';
+import '../../theme/l10n.dart';
 import '../../theme/m_theme.dart';
 import 'visualizer.dart';
 
@@ -31,7 +32,7 @@ class NowPlayingPanel extends StatelessWidget {
           children: [
             Row(
               children: [
-                const SectionLabel('Now Playing'),
+                SectionLabel(L10n.t(context, 'nowPlaying')),
                 if (showQueue && onCloseQueue != null)
                   IconButton(
                     icon: const Icon(Icons.close, size: 16, color: MColors.muted),
@@ -59,7 +60,7 @@ class NowPlayingPanel extends StatelessWidget {
                       ),
                       const SizedBox(height: 18),
                       const Text(
-                        'Nothing playing',
+                        L10n.t(context, 'nothingPlaying'),
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 6),
@@ -153,7 +154,7 @@ class NowPlayingPanel extends StatelessWidget {
               const SizedBox(height: 8),
               if (showQueue) Expanded(child: _buildQueue(context, player)) else const Spacer(),
               if (!showQueue && lyrics.currentLyrics.isNotEmpty) ...[
-                const SectionLabel('Lyrics'),
+                SectionLabel(L10n.t(context, 'lyrics')),
                 const SizedBox(height: 8),
                 Expanded(
                   child: SingleChildScrollView(
@@ -174,7 +175,7 @@ class NowPlayingPanel extends StatelessWidget {
   Widget _buildQueue(BuildContext context, MezoxPlayerController player) {
     if (player.queue.isEmpty) {
       return const Center(
-        child: Text('Queue is empty', style: TextStyle(color: MColors.muted, fontSize: 12)),
+        child: Text(L10n.t(context, 'queueEmpty'), style: TextStyle(color: MColors.muted, fontSize: 12)),
       );
     }
     return Column(
@@ -182,11 +183,11 @@ class NowPlayingPanel extends StatelessWidget {
       children: [
         Row(
           children: [
-            const SectionLabel('Queue'),
+            SectionLabel(L10n.t(context, 'queue')),
             const Spacer(),
             TextButton(
               onPressed: player.clearQueue,
-              child: const Text('Clear', style: TextStyle(color: MColors.muted, fontSize: 11)),
+              child: Text(L10n.t(context, 'clear'), style: const TextStyle(color: MColors.muted, fontSize: 11)),
             ),
           ],
         ),

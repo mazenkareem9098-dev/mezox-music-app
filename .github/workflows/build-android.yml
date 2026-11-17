@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       mezox_relay:
-        description: 'Public MQTT relay host (default: broker.hivemq.com)'
+        description: 'Public MQTT relay host'
         required: false
         default: 'broker.hivemq.com'
 
@@ -26,8 +26,10 @@ jobs:
         run: flutter pub get
       - name: Build release APK
         run: flutter build apk --release --dart-define=MEZOX_API=${{ github.event.inputs.mezox_relay || 'broker.hivemq.com' }}
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/M-MUSIC.apk
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MEZOX-MUSIC-android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: M-MUSIC-android-apk
+          path: build/app/outputs/flutter-apk/M-MUSIC.apk

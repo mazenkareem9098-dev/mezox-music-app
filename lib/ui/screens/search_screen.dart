@@ -8,6 +8,7 @@ import '../../services/audio_player_service.dart';
 import '../../services/library_service.dart';
 import '../../services/search_query_service.dart';
 import '../../services/youtube_service.dart';
+import '../../theme/l10n.dart';
 import '../../theme/m_theme.dart';
 import '../widgets/track_tile.dart';
 import 'playlists_screen.dart';
@@ -307,37 +308,39 @@ class _SearchScreenState extends State<SearchScreen> {
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
       children: [
         SectionLabel(
-          'Recent searches',
+          L10n.t(context, 'recentSearches'),
           trailing: lib.searchHistory.isEmpty
               ? null
               : GlowButton(
-                  label: 'Clear history',
+                  label: L10n.t(context, 'clearHistory'),
                   icon: Icons.delete_sweep_outlined,
                   compact: true,
                   onPressed: () async {
                     await lib.clearSearchHistory();
-                    if (mounted) MToast.show(context, 'Search history cleared');
+                    if (mounted) {
+                      MToast.show(context, L10n.t(context, 'searchHistoryCleared'));
+                    }
                   },
                 ),
         ),
         const SizedBox(height: 12),
         if (lib.searchHistory.isEmpty)
-          const GlassPanel(
+          GlassPanel(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.search_rounded, color: MColors.primary, size: 40),
-                SizedBox(height: 10),
+                const Icon(Icons.search_rounded, color: MColors.primary, size: 40),
+                const SizedBox(height: 10),
                 Text(
-                  'ابدأ البحث — Search songs, artists and videos',
+                  L10n.t(context, 'startSearching'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
-                  'Live suggestions from YouTube appear as you type. Arabic and English both work.',
+                  L10n.t(context, 'suggestionsHint'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: MColors.muted, fontSize: 11),
+                  style: const TextStyle(color: MColors.muted, fontSize: 11),
                 ),
               ],
             ),
@@ -492,13 +495,13 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildResults(String? currentId) {
     final tracks = _sortedResults;
     if (tracks.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'No results. Try a different spelling or language.',
+            L10n.t(context, 'noResults'),
             textAlign: TextAlign.center,
-            style: TextStyle(color: MColors.muted, fontSize: 12),
+            style: const TextStyle(color: MColors.muted, fontSize: 12),
           ),
         ),
       );
@@ -517,6 +520,40 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       },
     );
+  }
+
+  String _categoryLabel(String value) {
+    switch (value) {
+      case 'All':
+        return L10n.t(context, 'all');
+      case 'Songs':
+        return L10n.t(context, 'songs');
+      case 'Videos':
+        return L10n.t(context, 'videos');
+      case 'Artists':
+        return L10n.t(context, 'artists');
+      case 'Playlists':
+        return L10n.t(context, 'playlistsCat');
+      case 'Albums':
+        return L10n.t(context, 'albumsCat');
+      default:
+        return value;
+    }
+  }
+
+  String _sortLabel(String value) {
+    switch (value) {
+      case 'Title A–Z':
+        return L10n.t(context, 'titleAZ');
+      case 'Artist A–Z':
+        return L10n.t(context, 'artistAZ');
+      case 'Shortest first':
+        return L10n.t(context, 'shortest');
+      case 'Longest first':
+        return L10n.t(context, 'longest');
+      default:
+        return L10n.t(context, 'relevance');
+    }
   }
 
   @override
@@ -540,9 +577,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     textInputAction: TextInputAction.search,
                     onEditingComplete: () => _runSearch(record: true),
                     onSubmitted: (_) => _runSearch(record: true),
-                    decoration: const InputDecoration(
-                      hintText: 'ابحث عن أغنية أو فنان... Search songs, artists, videos',
-                      prefixIcon: Icon(Icons.search),
+                    decoration: InputDecoration(
+                      hintText: L10n.t(context, 'searchHintShort'),
+                      prefixIcon: const Icon(Icons.search),
                     ),
                   ),
                 ),
@@ -554,7 +591,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 const SizedBox(width: 6),
                 GlowButton(
-                  label: 'Search',
+                  label: L10n.t(context, 'search'),
                   icon: Icons.search,
                   filled: true,
                   compact: true,
@@ -575,7 +612,7 @@ class _SearchScreenState extends State<SearchScreen> {
               itemBuilder: (_, i) {
                 final c = _categories[i];
                 return GlowButton(
-                  label: c,
+                  label: _categoryLabel(c),
                   icon: c == 'All' ? Icons.apps : c == 'Songs' ? Icons.music_note : c == 'Videos' ? Icons.music_video : c == 'Artists' ? Icons.person_outline : c == 'Playlists' ? Icons.playlist_play : Icons.album_outlined,
                   compact: true,
                   filled: _category == c,
@@ -600,7 +637,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 GlowButton(
-                  label: 'Retry',
+                  label: L10n.t(context, 'retry'),
                   icon: Icons.refresh,
                   compact: true,
                   onPressed: () => _runSearch(record: false),
@@ -615,16 +652,16 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: SectionLabel('Live suggestions'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: SectionLabel(L10n.t(context, 'liveSuggestions')),
                 ),
                 if (_suggestLoading && _suggestions.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(12),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
                     child: Text(
-                      'Getting suggestions...',
-                      style: TextStyle(color: MColors.muted, fontSize: 11),
+                      L10n.t(context, 'gettingSuggestions'),
+                      style: const TextStyle(color: MColors.muted, fontSize: 11),
                     ),
                   )
                 else
@@ -639,24 +676,27 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '$_category — ${_sortedResults.length} results',
+                    '${_categoryLabel(_category)} — ${_sortedResults.length} ${L10n.t(context, 'results')}',
                     style: const TextStyle(color: MColors.muted, fontSize: 11),
                   ),
                 ),
                 PopupMenuButton<String>(
                   initialValue: _sort,
                   color: MColors.surface,
-                  tooltip: 'Sort results',
+                  tooltip: L10n.t(context, 'sort'),
                   onSelected: (value) => setState(() => _sort = value),
                   itemBuilder: (_) => _sorts
-                      .map((s) => PopupMenuItem<String>(value: s, child: Text(s)))
+                      .map((s) => PopupMenuItem<String>(
+                            value: s,
+                            child: Text(_sortLabel(s)),
+                          ))
                       .toList(),
                   child: Row(
                     children: [
                       const Icon(Icons.sort, color: MColors.muted, size: 16),
                       const SizedBox(width: 4),
                       Text(
-                        _sort,
+                        _sortLabel(_sort),
                         style: const TextStyle(color: MColors.bright, fontSize: 11),
                       ),
                     ],

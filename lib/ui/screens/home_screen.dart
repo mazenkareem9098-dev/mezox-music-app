@@ -5,6 +5,7 @@ import '../../models/track.dart';
 import '../../services/audio_player_service.dart';
 import '../../services/library_service.dart';
 import '../../services/youtube_service.dart';
+import '../../theme/l10n.dart';
 import '../../theme/m_theme.dart';
 import '../widgets/section_carousel.dart';
 
@@ -322,8 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const Spacer(),
-                const Text(
-                  'YOUR MUSIC,\nYOUR MOOD',
+                Text(
+                  L10n.t(context, 'yourMusicMood'),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 38,
@@ -333,9 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Listen. Enjoy. Repeat.',
-                  style: TextStyle(color: MColors.muted, fontSize: 14),
+                Text(
+                  L10n.t(context, 'slogan'),
+                  style: const TextStyle(color: MColors.muted, fontSize: 14),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -349,14 +350,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: <Widget>[
                     GlowButton(
-                      label: 'Play Now',
+                      label: L10n.t(context, 'playNow'),
                       icon: Icons.play_arrow_rounded,
                       onPressed: _playNow,
                       filled: true,
                     ),
                     const SizedBox(width: 12),
                     GlowButton(
-                      label: 'Explore',
+                      label: L10n.t(context, 'exploreButton'),
                       icon: Icons.explore_outlined,
                       onPressed: _explore,
                     ),
@@ -442,15 +443,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         Container(key: _discoveryKey, child: const SizedBox.shrink()),
         _section(
-          'Made For You',
+          L10n.t(context, 'madeForYou'),
           _madeKey,
           subtitle: 'Picked from your library and YouTube.',
         ),
         const SizedBox(height: 22),
-        _section('Trending Now', _trendingKey),
+        _section(L10n.t(context, 'trendingNow'), _trendingKey),
         const SizedBox(height: 22),
         SectionCarousel(
-          title: 'Recently Played',
+          title: L10n.t(context, 'recentlyPlayed'),
           tracks: recent,
           loading: _loading && recent.isEmpty,
           subtitle: 'Nothing played yet — jump into Trending Now.',
@@ -458,11 +459,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onMore: (Track track) => _showTrackMenu(context, track),
         ),
         const SizedBox(height: 22),
-        _section('Recommended For You', _recommendedKey),
+        _section(L10n.t(context, 'recommended'), _recommendedKey),
         const SizedBox(height: 22),
-        _section('Popular Artists', _artistsKey),
+        _section(L10n.t(context, 'popularArtists'), _artistsKey),
         const SizedBox(height: 22),
-        _section('New Releases', _newKey),
+        _section(L10n.t(context, 'newReleases'), _newKey),
       ],
     );
   }

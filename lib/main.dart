@@ -55,11 +55,12 @@ class MezoxApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF0B0B0F),
+          scaffoldBackgroundColor: const Color(0xFF050505),
           colorScheme: const ColorScheme.dark(
-            primary: Color(0xFF7C5CFF),
-            secondary: Color(0xFF00D1B2),
-            surface: Color(0xFF141420),
+            primary: Color(0xFFE50914),
+            secondary: Color(0xFFFF2D55),
+            surface: Color(0xFF141414),
+            error: Color(0xFFFF3B30),
           ),
           useMaterial3: true,
         ),

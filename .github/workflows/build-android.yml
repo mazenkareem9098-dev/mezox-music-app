@@ -3,17 +3,14 @@ name: Build Android APK
 on:
   workflow_dispatch:
     inputs:
-      mezox_api:
-        description: 'MEZOX_API server URL (e.g. https://mezox-music-api.onrender.com)'
-        required: true
-        default: 'http://10.0.2.2:3000'
+      mezox_relay:
+        description: 'Public MQTT relay host (default: broker.hivemq.com)'
+        required: false
+        default: 'broker.hivemq.com'
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -31,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Build release APK
-        run: flutter build apk --release --dart-define=MEZOX_API=${{ github.event.inputs.mezox_api }}
+        run: flutter build apk --release --dart-define=MEZOX_API=${{ github.event.inputs.mezox_relay || 'broker.hivemq.com' }}
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:

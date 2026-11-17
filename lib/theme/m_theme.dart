@@ -388,22 +388,35 @@ abstract final class MToast {
   static void show(BuildContext context, String message) {
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) return;
+    final width = MediaQuery.of(context).size.width;
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(milliseconds: 1800),
           backgroundColor: const Color(0xEE120809),
+          margin: EdgeInsets.only(
+            top: 10,
+            right: 12,
+            left: width > 700 ? width - 300 : 60,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: MColors.primary.withOpacity(0.5)),
           ),
           content: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.graphic_eq, color: MColors.primary, size: 18),
-              const SizedBox(width: 10),
-              Expanded(child: Text(message, style: const TextStyle(color: Colors.white))),
+              const Icon(Icons.graphic_eq, color: MColors.primary, size: 14),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ),
             ],
           ),
         ),

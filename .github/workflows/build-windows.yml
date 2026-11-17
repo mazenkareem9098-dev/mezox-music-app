@@ -1,6 +1,8 @@
 name: Build Windows EXE
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       mezox_relay:
@@ -18,12 +20,6 @@ jobs:
           channel: 'stable'
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
-      - name: Generate platform scaffolding (if needed)
-        shell: bash
-        run: |
-          if [ ! -d "windows" ]; then
-            flutter create --project-name mezox_music --org com.mezox .
-          fi
       - name: Install dependencies
         run: flutter pub get
       - name: Build release Windows

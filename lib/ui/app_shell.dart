@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import '../services/friends_service.dart';
 import '../services/library_service.dart';
 import '../services/search_query_service.dart';
+import '../theme/l10n.dart';
 import '../theme/m_theme.dart';
 import 'screens/about_screen.dart';
 import 'screens/albums_screen.dart';
@@ -68,22 +69,23 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
   bool _fullscreen = false;
   bool _windowFull = false;
   bool _settingsLoaded = false;
+  double _sidebarWidth = 222;
   final _titleSearch = TextEditingController();
 
   static const List<MNavItem> _nav = <MNavItem>[
-    MNavItem(MMainPage.home, 'HOME', Icons.home_rounded),
-    MNavItem(MMainPage.explore, 'EXPLORE', Icons.explore_outlined),
-    MNavItem(MMainPage.search, 'SEARCH', Icons.search_rounded),
-    MNavItem(MMainPage.library, 'YOUR LIBRARY', Icons.library_music_outlined),
-    MNavItem(MMainPage.liked, 'LIKED SONGS', Icons.favorite_border),
-    MNavItem(MMainPage.playlists, 'PLAYLISTS', Icons.playlist_play),
-    MNavItem(MMainPage.artists, 'ARTISTS', Icons.mic_none),
-    MNavItem(MMainPage.albums, 'ALBUMS', Icons.album_outlined),
-    MNavItem(MMainPage.podcasts, 'PODCASTS', Icons.podcasts_outlined),
-    MNavItem(MMainPage.history, 'HISTORY', Icons.history),
-    MNavItem(MMainPage.settings, 'SETTINGS', Icons.settings_outlined),
-    MNavItem(MMainPage.premium, 'PREMIUM', Icons.workspace_premium_outlined),
-    MNavItem(MMainPage.about, 'ABOUT', Icons.info_outline),
+    MNavItem(MMainPage.home, 'home', Icons.home_rounded),
+    MNavItem(MMainPage.explore, 'explore', Icons.explore_outlined),
+    MNavItem(MMainPage.search, 'search', Icons.search_rounded),
+    MNavItem(MMainPage.library, 'library', Icons.library_music_outlined),
+    MNavItem(MMainPage.liked, 'liked', Icons.favorite_border),
+    MNavItem(MMainPage.playlists, 'playlists', Icons.playlist_play),
+    MNavItem(MMainPage.artists, 'artists', Icons.mic_none),
+    MNavItem(MMainPage.albums, 'albums', Icons.album_outlined),
+    MNavItem(MMainPage.podcasts, 'podcasts', Icons.podcasts_outlined),
+    MNavItem(MMainPage.history, 'history', Icons.history),
+    MNavItem(MMainPage.settings, 'settings', Icons.settings_outlined),
+    MNavItem(MMainPage.premium, 'premium', Icons.workspace_premium_outlined),
+    MNavItem(MMainPage.about, 'about', Icons.info_outline),
   ];
 
   static bool get _isDesktop =>
@@ -198,11 +200,35 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
           case 'home':
             _go(MMainPage.home);
             break;
+          case 'explore':
+            _go(MMainPage.explore);
+            break;
           case 'search':
             _go(MMainPage.search);
             break;
           case 'library':
             _go(MMainPage.library);
+            break;
+          case 'liked':
+            _go(MMainPage.liked);
+            break;
+          case 'playlists':
+            _go(MMainPage.playlists);
+            break;
+          case 'artists':
+            _go(MMainPage.artists);
+            break;
+          case 'albums':
+            _go(MMainPage.albums);
+            break;
+          case 'podcasts':
+            _go(MMainPage.podcasts);
+            break;
+          case 'history':
+            _go(MMainPage.history);
+            break;
+          case 'premium':
+            _go(MMainPage.premium);
             break;
           case 'settings':
             _go(MMainPage.settings);
@@ -218,14 +244,22 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             break;
         }
       },
-      itemBuilder: (_) => const [
-        PopupMenuItem(value: 'home', child: Text('Home', style: TextStyle(color: MColors.muted))),
-        PopupMenuItem(value: 'search', child: Text('Search', style: TextStyle(color: MColors.muted))),
-        PopupMenuItem(value: 'library', child: Text('Your Library', style: TextStyle(color: MColors.muted))),
-        PopupMenuItem(value: 'friends', child: Text('Friends & Listen Together', style: TextStyle(color: MColors.muted))),
-        PopupMenuItem(value: 'settings', child: Text('Settings', style: TextStyle(color: MColors.muted))),
-        PopupMenuItem(value: 'about', child: Text('About M MUSIC', style: TextStyle(color: MColors.muted))),
-        PopupMenuItem(value: 'logout', child: Text('Sign out', style: TextStyle(color: MColors.muted))),
+      itemBuilder: (_) => <PopupMenuEntry<String>>[
+        PopupMenuItem(value: 'home', child: Text(L10n.t(context, 'home'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'explore', child: Text(L10n.t(context, 'explore'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'search', child: Text(L10n.t(context, 'search'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'library', child: Text(L10n.t(context, 'library'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'liked', child: Text(L10n.t(context, 'liked'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'playlists', child: Text(L10n.t(context, 'playlists'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'artists', child: Text(L10n.t(context, 'artists'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'albums', child: Text(L10n.t(context, 'albums'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'podcasts', child: Text(L10n.t(context, 'podcasts'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'history', child: Text(L10n.t(context, 'history'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'premium', child: Text(L10n.t(context, 'premium'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'friends', child: Text(L10n.t(context, 'friends'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'settings', child: Text(L10n.t(context, 'settings'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'about', child: Text(L10n.t(context, 'about'), style: const TextStyle(color: MColors.muted))),
+        PopupMenuItem(value: 'logout', child: Text(L10n.t(context, 'signOut'), style: const TextStyle(color: MColors.muted))),
       ],
     );
   }
@@ -376,7 +410,6 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             tooltip: 'Settings',
             onPressed: () => _go(MMainPage.settings),
           ),
-          _overflowMenuButton(),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: MColors.muted, size: 19),
             tooltip: 'Notifications',
@@ -478,7 +511,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
 
   Widget _sidebar() {
     return Container(
-      width: 222,
+      width: _sidebarWidth,
       decoration: BoxDecoration(
         color: const Color(0x99100809),
         border: Border(right: BorderSide(color: MColors.primary.withOpacity(0.16))),
@@ -535,7 +568,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
                       size: 19,
                     ),
                     title: Text(
-                      item.label,
+                      L10n.t(context, item.label),
                       style: TextStyle(
                         color: selected ? Colors.white : MColors.muted,
                         fontSize: 11,
@@ -572,6 +605,27 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _sidebarResizer() {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeLeftRight,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanUpdate: (details) {
+          setState(() {
+            _sidebarWidth =
+                (_sidebarWidth + details.delta.dx).clamp(180.0, 330.0).toDouble();
+          });
+        },
+        child: Container(
+          width: 6,
+          color: Colors.transparent,
+          alignment: Alignment.center,
+          child: Container(width: 2, height: double.infinity, color: MColors.primary.withOpacity(0.25)),
+        ),
       ),
     );
   }
@@ -658,6 +712,7 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
                       child: Row(
                         children: [
                           if (_isDesktop) _sidebar(),
+                          if (_isDesktop) _sidebarResizer(),
                           Expanded(child: _buildPages()),
                           if (showSidePanel)
                             NowPlayingPanel(

@@ -245,12 +245,6 @@ class YouTubePlayerService extends ChangeNotifier {
           if (id != null) load(id);
           return;
         }
-        if (tries == 4 && snapshot.contains('"yt":"object"')) {
-          await controller.evaluateJavascript(
-            source:
-                'window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady()',
-          );
-        }
       } catch (e) {
         _log('pollError=$e');
       }
@@ -339,6 +333,7 @@ window.onYouTubeIframeAPIReady = function () {
     width: '100%',
     height: '100%',
     playerVars: {
+      autoplay: 1,
       playsinline: 1,
       controls: 0,
       disablekb: 1,
@@ -352,18 +347,16 @@ window.onYouTubeIframeAPIReady = function () {
       onReady: function () {
         mmReady = true;
         mmPlayer.setVolume(80);
+        mmPlayer.mute();
         mmSend('mmReady', {ok:true});
         if (mmQueued) { mmLoad(mmQueued); mmQueued = null; }
       },
       onStateChange: function (e) {
         mmSend('mmState', {state: e.data});
-        if ((e.data === YT.PlayerState.PAUSED ||
-             e.data === YT.PlayerState.CUED ||
-             e.data === -1) && mmAutoPlayPending) {
+        if (e.data === YT.PlayerState.PLAYING && mmAutoPlayPending) {
           mmAutoPlayPending = false;
-          try { mmPlayer.unMute(); mmPlayer.playVideo(); } catch (err) {}
+          try { mmPlayer.unMute(); } catch (err) {}
         }
-        if (e.data === YT.PlayerState.PLAYING) mmAutoPlayPending = false;
         if (e.data === YT.PlayerState.ENDED) mmSend('mmState', {state: 0});
       },
       onError: function (e) {
@@ -381,9 +374,9 @@ function mmLoad(id) {
   mmAutoPlayPending = true;
   mmRetryCount = 0;
   try {
-    mmPlayer.unMute();
+    mmPlayer.mute();
     mmPlayer.loadVideoById(id);
-    setTimeout(mmRetryPlay, 800);
+    setTimeout(mmRetryPlay, 900);
   } catch (e) { mmSend('mmError', {message: String(e)}); }
 }
 function mmRetryPlay() {
@@ -391,14 +384,19 @@ function mmRetryPlay() {
   if (mmRetryCount > 15) { mmAutoPlayPending = false; return; }
   mmRetryCount++;
   try {
-    if (mmPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+    var st = mmPlayer.getPlayerState();
+    if (st === YT.PlayerState.PLAYING) {
       mmAutoPlayPending = false;
+      mmPlayer.unMute();
       return;
     }
-    mmPlayer.unMute();
+    if (st === YT.PlayerState.BUFFERING) {
+      setTimeout(mmRetryPlay, 900);
+      return;
+    }
     mmPlayer.playVideo();
   } catch (err) {}
-  setTimeout(mmRetryPlay, 800);
+  setTimeout(mmRetryPlay, 900);
 }
 function mmPlay() { try { mmPlayer.playVideo(); } catch (e) {} }
 function mmPause() { try { mmPlayer.pauseVideo(); } catch (e) {} }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -9,6 +10,8 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 /// No direct audio extraction, no stream decipher, no ad removal — playback
 /// always goes through YouTube's own player.
 class YouTubePlayerService extends ChangeNotifier {
+  final bool _debug = Platform.environment['MM_DEBUG_PLAYER'] == '1';
+
   YouTubePlayerService() {
     _settings = InAppWebViewSettings(
       javaScriptEnabled: true,
@@ -60,6 +63,7 @@ class YouTubePlayerService extends ChangeNotifier {
             callback: (_) {
               _apiReady = true;
               _error = null;
+              _log('ready volume=${(_volume * 100).round()}');
               setVolume(_volume);
               if (_muted) setMuted(true);
               notifyListeners();
@@ -79,6 +83,7 @@ class YouTubePlayerService extends ChangeNotifier {
               _state = _asInt(data['state']);
               _playing = _state == 1;
               _buffering = _state == 3;
+              _log('state=$_state playing=$_playing buffering=$_buffering');
               if (_state == 5) {
                 // Video cued — nothing else to do.
               }
@@ -103,6 +108,7 @@ class YouTubePlayerService extends ChangeNotifier {
             handlerName: 'mmError',
             callback: (args) {
               _error = args.isEmpty ? 'YouTube player error' : args.first.toString();
+              _log('error=$_error');
               _playing = false;
               _buffering = false;
               notifyListeners();
@@ -118,6 +124,7 @@ class YouTubePlayerService extends ChangeNotifier {
       );
 
   Future<void> load(String videoId) async {
+    _log('load=$videoId ready=$_apiReady');
     _error = null;
     _position = Duration.zero;
     _duration = Duration.zero;
@@ -153,6 +160,10 @@ class YouTubePlayerService extends ChangeNotifier {
     _muted = muted;
     notifyListeners();
     await _run('window.mmMute(${muted ? 'true' : 'false'})');
+  }
+
+  void _log(String message) {
+    if (_debug) debugPrint('MM_PLAYER $message');
   }
 
   Future<void> _run(String source) async {

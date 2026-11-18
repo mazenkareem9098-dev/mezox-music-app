@@ -20,9 +20,10 @@ var mmAutoPlayPending = false;
 
 function mmSend(handler, data) {
   try {
-    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
-      window.flutter_inappwebview.callHandler(handler, data || {});
-    }
+    window.parent.postMessage(
+      { __mmHandler: handler, __mmData: data || {} },
+      '*'
+    );
   } catch (e) {}
 }
 
@@ -95,14 +96,20 @@ function mMute(m) {
   try { if (m) mmPlayer.mute(); else mmPlayer.unMute(); } catch (e) {}
 }
 
-window.mmLoad = mmLoad;
-window.mmPlay = mmPlay;
-window.mmPause = mmPause;
-window.mmToggle = mmToggle;
-window.mmStop = mmStop;
-window.mmSeek = mmSeek;
-window.mmVolume = mmVolume;
-window.mmMute = mMute;
+window.addEventListener('message', function (e) {
+  var d = e.data;
+  if (!d || !d.__mmCmd) return;
+  switch (d.__mmCmd) {
+    case 'load': mmLoad(d.id); break;
+    case 'play': mmPlay(); break;
+    case 'pause': mmPause(); break;
+    case 'toggle': mmToggle(); break;
+    case 'stop': mmStop(); break;
+    case 'seek': mmSeek(d.sec); break;
+    case 'volume': mmVolume(d.value); break;
+    case 'mute': mMute(d.value); break;
+  }
+});
 
 setInterval(function () {
   if (!mmReady || !mmPlayer || !mmPlayer.getCurrentTime) return;

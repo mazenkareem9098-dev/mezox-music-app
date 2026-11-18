@@ -115,6 +115,19 @@ class YouTubePlayerService extends ChangeNotifier {
               return true;
             },
           );
+          controller.loadUrl(
+            urlRequest: URLRequest(
+              url: WebUri(
+                'https://raw.githack.com/mazenkareem9098-dev/mezox-music-app/main/docs/player.html',
+              ),
+            ),
+          );
+        },
+        onLoadError: (controller, url, code, message) {
+          _log('loadError=$code message=$message url=$url');
+        },
+        onLoadHttpError: (controller, url, statusCode, description) {
+          _log('httpError=$statusCode description=$description url=$url');
         },
         onLoadStop: (controller, url) async {
           await controller.evaluateJavascript(

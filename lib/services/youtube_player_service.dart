@@ -208,10 +208,13 @@ class YouTubePlayerService extends ChangeNotifier {
       }
       tries++;
       try {
-        final value = await controller.evaluateJavascript(
-          source: 'window.mmReady === true',
+        final raw = await controller.evaluateJavascript(
+          source:
+              'JSON.stringify({ready: window.mmReady === true, yt: typeof YT, state: document.readyState})',
         );
-        if (value == true) {
+        final snapshot = raw?.toString() ?? '';
+        if (tries % 4 == 0) _log('poll=$snapshot');
+        if (snapshot.contains('"ready":true')) {
           timer.cancel();
           _readyPoll = null;
           _apiReady = true;
@@ -222,6 +225,12 @@ class YouTubePlayerService extends ChangeNotifier {
           _pendingVideoId = null;
           if (id != null) load(id);
           return;
+        }
+        if (tries == 4 && snapshot.contains('"yt":"object"')) {
+          await controller.evaluateJavascript(
+            source:
+                'window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady()',
+          );
         }
       } catch (e) {
         _log('pollError=$e');

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -41,9 +40,6 @@ class YouTubePlayerService extends ChangeNotifier {
   bool _muted = false;
   String? _error;
   int _state = -1;
-  bool _hostNavigationDone = false;
-  String? _lastVideoId;
-  Timer? _readyPoll;
 
   bool get apiReady => _apiReady;
   bool get isPlaying => _playing;
@@ -60,18 +56,14 @@ class YouTubePlayerService extends ChangeNotifier {
         key: key,
         initialSettings: _settings,
         initialData: InAppWebViewInitialData(data: _playerHtml),
+        initialHeaders: const <String, String>{
+          'Referer': 'https://raw.githack.com/mezox-music-app/',
+        },
         onWebViewCreated: (controller) {
           _controller = controller;
           controller.addJavaScriptHandler(
             handlerName: 'mmReady',
             callback: (_) {
-              if (!_hostNavigationDone) {
-                _log('ready-before-host');
-                _apiReady = false;
-                return true;
-              }
-              _readyPoll?.cancel();
-              _readyPoll = null;
               _apiReady = true;
               _error = null;
               _log('ready volume=${(_volume * 100).round()}');
@@ -127,30 +119,7 @@ class YouTubePlayerService extends ChangeNotifier {
             },
           );
         },
-        onLoadError: (controller, url, code, message) {
-          _log('loadError=$code message=$message url=$url');
-        },
-        onLoadHttpError: (controller, url, statusCode, description) {
-          _log('httpError=$statusCode description=$description url=$url');
-        },
-        onLoadStart: (controller, url) {
-          _log('loadStart=$url');
-        },
         onLoadStop: (controller, url) async {
-          _log('loadStop=$url');
-          if (!_hostNavigationDone) {
-            _hostNavigationDone = true;
-            _apiReady = false;
-            await controller.loadUrl(
-              urlRequest: URLRequest(
-                url: WebUri(
-                  'https://raw.githack.com/mazenkareem9098-dev/mezox-music-app/main/docs/player.html',
-                ),
-              ),
-            );
-            return;
-          }
-          if (!_apiReady) _startReadyPoll(controller);
           await controller.evaluateJavascript(
             source: 'window.__mmNotifyReady && window.__mmNotifyReady();',
           );
@@ -158,8 +127,7 @@ class YouTubePlayerService extends ChangeNotifier {
       );
 
   Future<void> load(String videoId) async {
-    _log('load=$videoId ready=$_apiReady host=$_hostNavigationDone');
-    _lastVideoId = videoId;
+    _log('load=$videoId ready=$_apiReady');
     _error = null;
     _position = Duration.zero;
     _duration = Duration.zero;
@@ -167,7 +135,7 @@ class YouTubePlayerService extends ChangeNotifier {
     _buffering = true;
     notifyListeners();
     final controller = _controller;
-    if (controller == null || !_apiReady || !_hostNavigationDone) {
+    if (controller == null || !_apiReady) {
       _pendingVideoId = videoId;
       return;
     }
@@ -195,53 +163,6 @@ class YouTubePlayerService extends ChangeNotifier {
     _muted = muted;
     notifyListeners();
     await _run('window.mmMute(${muted ? 'true' : 'false'})');
-  }
-
-  void _startReadyPoll(InAppWebViewController controller) {
-    _readyPoll?.cancel();
-    int tries = 0;
-    _readyPoll = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
-      if (!_hostNavigationDone || _apiReady) {
-        timer.cancel();
-        _readyPoll = null;
-        return;
-      }
-      tries++;
-      try {
-        final raw = await controller.evaluateJavascript(
-          source:
-              'JSON.stringify({ready: window.mmReady === true, yt: typeof YT, state: document.readyState})',
-        );
-        final snapshot = raw?.toString() ?? '';
-        if (tries % 4 == 0) _log('poll=$snapshot');
-        if (snapshot.contains('"ready":true')) {
-          timer.cancel();
-          _readyPoll = null;
-          _apiReady = true;
-          _error = null;
-          setVolume(_volume);
-          notifyListeners();
-          final id = _pendingVideoId ?? _lastVideoId;
-          _pendingVideoId = null;
-          if (id != null) load(id);
-          return;
-        }
-        if (tries == 4 && snapshot.contains('"yt":"object"')) {
-          await controller.evaluateJavascript(
-            source:
-                'window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady()',
-          );
-        }
-      } catch (e) {
-        _log('pollError=$e');
-      }
-      if (tries > 40) {
-        timer.cancel();
-        _readyPoll = null;
-        _error = 'YouTube player did not initialize';
-        notifyListeners();
-      }
-    });
   }
 
   void _log(String message) {
@@ -280,7 +201,6 @@ class YouTubePlayerService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _readyPoll?.cancel();
     _controller = null;
     super.dispose();
   }

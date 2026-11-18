@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -41,6 +42,8 @@ class YouTubePlayerService extends ChangeNotifier {
   String? _error;
   int _state = -1;
   bool _hostNavigationDone = false;
+  String? _lastVideoId;
+  Timer? _readyPoll;
 
   bool get apiReady => _apiReady;
   bool get isPlaying => _playing;
@@ -62,6 +65,13 @@ class YouTubePlayerService extends ChangeNotifier {
           controller.addJavaScriptHandler(
             handlerName: 'mmReady',
             callback: (_) {
+              if (!_hostNavigationDone) {
+                _log('ready-before-host');
+                _apiReady = false;
+                return true;
+              }
+              _readyPoll?.cancel();
+              _readyPoll = null;
               _apiReady = true;
               _error = null;
               _log('ready volume=${(_volume * 100).round()}');
@@ -130,6 +140,7 @@ class YouTubePlayerService extends ChangeNotifier {
           _log('loadStop=$url');
           if (!_hostNavigationDone) {
             _hostNavigationDone = true;
+            _apiReady = false;
             await controller.loadUrl(
               urlRequest: URLRequest(
                 url: WebUri(
@@ -139,6 +150,7 @@ class YouTubePlayerService extends ChangeNotifier {
             );
             return;
           }
+          if (!_apiReady) _startReadyPoll(controller);
           await controller.evaluateJavascript(
             source: 'window.__mmNotifyReady && window.__mmNotifyReady();',
           );
@@ -146,7 +158,8 @@ class YouTubePlayerService extends ChangeNotifier {
       );
 
   Future<void> load(String videoId) async {
-    _log('load=$videoId ready=$_apiReady');
+    _log('load=$videoId ready=$_apiReady host=$_hostNavigationDone');
+    _lastVideoId = videoId;
     _error = null;
     _position = Duration.zero;
     _duration = Duration.zero;
@@ -154,7 +167,7 @@ class YouTubePlayerService extends ChangeNotifier {
     _buffering = true;
     notifyListeners();
     final controller = _controller;
-    if (controller == null || !_apiReady) {
+    if (controller == null || !_apiReady || !_hostNavigationDone) {
       _pendingVideoId = videoId;
       return;
     }
@@ -182,6 +195,44 @@ class YouTubePlayerService extends ChangeNotifier {
     _muted = muted;
     notifyListeners();
     await _run('window.mmMute(${muted ? 'true' : 'false'})');
+  }
+
+  void _startReadyPoll(InAppWebViewController controller) {
+    _readyPoll?.cancel();
+    int tries = 0;
+    _readyPoll = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
+      if (!_hostNavigationDone || _apiReady) {
+        timer.cancel();
+        _readyPoll = null;
+        return;
+      }
+      tries++;
+      try {
+        final value = await controller.evaluateJavascript(
+          source: 'window.mmReady === true',
+        );
+        if (value == true) {
+          timer.cancel();
+          _readyPoll = null;
+          _apiReady = true;
+          _error = null;
+          setVolume(_volume);
+          notifyListeners();
+          final id = _pendingVideoId ?? _lastVideoId;
+          _pendingVideoId = null;
+          if (id != null) load(id);
+          return;
+        }
+      } catch (e) {
+        _log('pollError=$e');
+      }
+      if (tries > 40) {
+        timer.cancel();
+        _readyPoll = null;
+        _error = 'YouTube player did not initialize';
+        notifyListeners();
+      }
+    });
   }
 
   void _log(String message) {
@@ -220,6 +271,7 @@ class YouTubePlayerService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _readyPoll?.cancel();
     _controller = null;
     super.dispose();
   }

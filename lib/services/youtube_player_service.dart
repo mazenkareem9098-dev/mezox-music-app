@@ -245,7 +245,9 @@ window.onYouTubeIframeAPIReady = function () {
       iv_load_policy: 3,
       modestbranding: 1,
       rel: 0,
-      showinfo: 0
+      showinfo: 0,
+      origin: 'https://www.youtube.com',
+      widget_referrer: 'https://www.youtube.com/'
     },
     events: {
       onReady: function () {

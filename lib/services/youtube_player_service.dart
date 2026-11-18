@@ -210,20 +210,17 @@ class YouTubePlayerService extends ChangeNotifier {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; background:#080808; overflow:hidden; }
-  #mmFrame { width:100%; height:100%; border:0; }
+  #player { width:100%; height:100%; }
+  iframe { width:100%; height:100%; border:0; pointer-events:none; }
 </style>
 </head>
 <body>
-<iframe id="mmFrame" src="https://raw.githack.com/mazenkareem9098-dev/mezox-music-app/main/docs/player.html"></iframe>
+<div id="player"></div>
 <script>
-var mmFrame = document.getElementById('mmFrame');
-function mmPost(cmd, extra) {
-  var msg = { __mmCmd: cmd };
-  if (extra) {
-    for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) msg[k] = extra[k]; }
-  }
-  try { mmFrame.contentWindow.postMessage(msg, '*'); } catch (e) {}
-}
+var mmPlayer = null;
+var mmReady = false;
+var mmQueued = null;
+var mmAutoPlayPending = false;
 function mmSend(handler, data) {
   try {
     if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
@@ -231,21 +228,92 @@ function mmSend(handler, data) {
     }
   } catch (e) {}
 }
-window.addEventListener('message', function (e) {
-  var d = e.data;
-  if (!d || !d.__mmHandler) return;
-  mmSend(d.__mmHandler, d.__mmData);
-});
-window.__mmNotifyReady = function () {};
-window.mmLoad = function (id) { mmPost('load', { id: id }); };
-window.mmPlay = function () { mmPost('play'); };
-window.mmPause = function () { mmPost('pause'); };
-window.mmToggle = function () { mmPost('toggle'); };
-window.mmStop = function () { mmPost('stop'); };
-window.mmSeek = function (sec) { mmPost('seek', { sec: sec }); };
-window.mmVolume = function (v) { mmPost('volume', { value: v }); };
-window.mmMute = function (m) { mmPost('mute', { value: m }); };
+window.__mmNotifyReady = function () { if (mmReady) mmSend('mmReady', {ok:true}); };
+window.onYouTubeIframeAPIReady = function () {
+  mmPlayer = new YT.Player('player', {
+    width: '100%',
+    height: '100%',
+    playerVars: {
+      playsinline: 1,
+      controls: 0,
+      disablekb: 1,
+      fs: 0,
+      iv_load_policy: 3,
+      modestbranding: 1,
+      rel: 0,
+      showinfo: 0,
+      origin: 'null'
+    },
+    events: {
+      onReady: function () {
+        mmReady = true;
+        mmPlayer.setVolume(80);
+        mmSend('mmReady', {ok:true});
+        if (mmQueued) { mmLoad(mmQueued); mmQueued = null; }
+      },
+      onStateChange: function (e) {
+        mmSend('mmState', {state: e.data});
+        if ((e.data === YT.PlayerState.PAUSED ||
+             e.data === YT.PlayerState.CUED ||
+             e.data === -1) && mmAutoPlayPending) {
+          mmAutoPlayPending = false;
+          try { mmPlayer.unMute(); mmPlayer.playVideo(); } catch (err) {}
+        }
+        if (e.data === YT.PlayerState.PLAYING) mmAutoPlayPending = false;
+        if (e.data === YT.PlayerState.ENDED) mmSend('mmState', {state: 0});
+      },
+      onError: function (e) {
+        mmSend('mmError', {code: e.data});
+      }
+    }
+  });
+};
+function mmLoad(id) {
+  if (!mmReady) { mmQueued = id; return; }
+  mmAutoPlayPending = true;
+  try {
+    mmPlayer.unMute();
+    mmPlayer.loadVideoById(id);
+    setTimeout(function () {
+      if (!mmAutoPlayPending) return;
+      mmAutoPlayPending = false;
+      try { mmPlayer.unMute(); mmPlayer.playVideo(); } catch (err) {}
+    }, 700);
+  } catch (e) { mmSend('mmError', {message: String(e)}); }
+}
+function mmPlay() { try { mmPlayer.playVideo(); } catch (e) {} }
+function mmPause() { try { mmPlayer.pauseVideo(); } catch (e) {} }
+function mmToggle() {
+  try {
+    if (mmPlayer.getPlayerState() === YT.PlayerState.PLAYING) mmPlayer.pauseVideo();
+    else mmPlayer.playVideo();
+  } catch (e) {}
+}
+function mmStop() { try { mmPlayer.stopVideo(); } catch (e) {} }
+function mmSeek(sec) { try { mmPlayer.seekTo(sec, true); } catch (e) {} }
+function mmVolume(v) { try { mmPlayer.setVolume(v); } catch (e) {} }
+function mMute(m) {
+  try { if (m) mmPlayer.mute(); else mmPlayer.unMute(); } catch (e) {}
+}
+window.mmLoad = mmLoad;
+window.mmPlay = mmPlay;
+window.mmPause = mmPause;
+window.mmToggle = mmToggle;
+window.mmStop = mmStop;
+window.mmSeek = mmSeek;
+window.mmVolume = mmVolume;
+window.mmMute = mMute;
+setInterval(function () {
+  if (!mmReady || !mmPlayer || !mmPlayer.getCurrentTime) return;
+  try {
+    mmSend('mmTime', {
+      position: Math.floor(mmPlayer.getCurrentTime() * 1000),
+      duration: Math.floor(mmPlayer.getDuration() || 0)
+    });
+  } catch (e) {}
+}, 250);
 </script>
+<script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
 ''';

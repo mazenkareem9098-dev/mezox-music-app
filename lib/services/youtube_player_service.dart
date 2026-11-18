@@ -325,6 +325,7 @@ var mmPlayer = null;
 var mmReady = false;
 var mmQueued = null;
 var mmAutoPlayPending = false;
+var mmRetryCount = 0;
 function mmSend(handler, data) {
   try {
     if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
@@ -378,15 +379,26 @@ window.onYouTubeIframeAPIReady = function () {
 function mmLoad(id) {
   if (!mmReady) { mmQueued = id; return; }
   mmAutoPlayPending = true;
+  mmRetryCount = 0;
   try {
     mmPlayer.unMute();
     mmPlayer.loadVideoById(id);
-    setTimeout(function () {
-      if (!mmAutoPlayPending) return;
-      mmAutoPlayPending = false;
-      try { mmPlayer.unMute(); mmPlayer.playVideo(); } catch (err) {}
-    }, 700);
+    setTimeout(mmRetryPlay, 800);
   } catch (e) { mmSend('mmError', {message: String(e)}); }
+}
+function mmRetryPlay() {
+  if (!mmAutoPlayPending || !mmPlayer) return;
+  if (mmRetryCount > 15) { mmAutoPlayPending = false; return; }
+  mmRetryCount++;
+  try {
+    if (mmPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+      mmAutoPlayPending = false;
+      return;
+    }
+    mmPlayer.unMute();
+    mmPlayer.playVideo();
+  } catch (err) {}
+  setTimeout(mmRetryPlay, 800);
 }
 function mmPlay() { try { mmPlayer.playVideo(); } catch (e) {} }
 function mmPause() { try { mmPlayer.pauseVideo(); } catch (e) {} }

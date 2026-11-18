@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>M MUSIC Player</title>
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; background:#080808; overflow:hidden; }
@@ -20,10 +21,9 @@ var mmAutoPlayPending = false;
 
 function mmSend(handler, data) {
   try {
-    window.parent.postMessage(
-      { __mmHandler: handler, __mmData: data || {} },
-      '*'
-    );
+    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+      window.flutter_inappwebview.callHandler(handler, data || {});
+    }
   } catch (e) {}
 }
 
@@ -66,6 +66,8 @@ window.onYouTubeIframeAPIReady = function () {
       }
     }
   });
+  var mmIframe = document.querySelector('iframe');
+  if (mmIframe) mmIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 };
 
 function mmLoad(id) {
@@ -96,20 +98,14 @@ function mMute(m) {
   try { if (m) mmPlayer.mute(); else mmPlayer.unMute(); } catch (e) {}
 }
 
-window.addEventListener('message', function (e) {
-  var d = e.data;
-  if (!d || !d.__mmCmd) return;
-  switch (d.__mmCmd) {
-    case 'load': mmLoad(d.id); break;
-    case 'play': mmPlay(); break;
-    case 'pause': mmPause(); break;
-    case 'toggle': mmToggle(); break;
-    case 'stop': mmStop(); break;
-    case 'seek': mmSeek(d.sec); break;
-    case 'volume': mmVolume(d.value); break;
-    case 'mute': mMute(d.value); break;
-  }
-});
+window.mmLoad = mmLoad;
+window.mmPlay = mmPlay;
+window.mmPause = mmPause;
+window.mmToggle = mmToggle;
+window.mmStop = mmStop;
+window.mmSeek = mmSeek;
+window.mmVolume = mmVolume;
+window.mmMute = mMute;
 
 setInterval(function () {
   if (!mmReady || !mmPlayer || !mmPlayer.getCurrentTime) return;

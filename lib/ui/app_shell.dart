@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../models/track.dart';
 import '../services/api_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/auth_service.dart';
@@ -104,6 +105,19 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
       final library = context.read<LibraryService>();
       library.addListener(_applySettings);
       _applySettings();
+
+      final autoId = Platform.environment['MM_PLAY_ID'];
+      if (autoId != null && autoId.length == 11) {
+        final track = Track(
+          id: 'yt_$autoId',
+          title: 'MM test track',
+          artist: 'M MUSIC',
+          artworkUrl: 'https://i.ytimg.com/vi/$autoId/hqdefault.jpg',
+          source: 'youtube',
+          sourceId: autoId,
+        );
+        context.read<MezoxPlayerController>().playQueue(<Track>[track], 0);
+      }
     });
   }
 

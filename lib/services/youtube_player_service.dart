@@ -55,7 +55,11 @@ class YouTubePlayerService extends ChangeNotifier {
   Widget buildView({Key? key}) => InAppWebView(
         key: key,
         initialSettings: _settings,
-        initialData: InAppWebViewInitialData(data: _playerHtml),
+        initialUrlRequest: URLRequest(
+          url: WebUri(
+            'https://raw.githack.com/mazenkareem9098-dev/mezox-music-app/main/docs/player.html',
+          ),
+        ),
         onWebViewCreated: (controller) {
           _controller = controller;
           controller.addJavaScriptHandler(
@@ -241,9 +245,7 @@ window.onYouTubeIframeAPIReady = function () {
       iv_load_policy: 3,
       modestbranding: 1,
       rel: 0,
-      showinfo: 0,
-      origin: 'https://www.youtube.com',
-      widget_referrer: 'https://www.youtube.com/'
+      showinfo: 0
     },
     events: {
       onReady: function () {

@@ -208,6 +208,7 @@ class YouTubePlayerService extends ChangeNotifier {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; background:#080808; overflow:hidden; }
   #player { width:100%; height:100%; }
@@ -241,8 +242,7 @@ window.onYouTubeIframeAPIReady = function () {
       iv_load_policy: 3,
       modestbranding: 1,
       rel: 0,
-      showinfo: 0,
-      origin: 'null'
+      showinfo: 0
     },
     events: {
       onReady: function () {
@@ -267,6 +267,10 @@ window.onYouTubeIframeAPIReady = function () {
       }
     }
   });
+  var mmIframe = document.querySelector('iframe');
+  if (mmIframe) {
+    mmIframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+  }
 };
 function mmLoad(id) {
   if (!mmReady) { mmQueued = id; return; }

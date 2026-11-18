@@ -40,6 +40,7 @@ class YouTubePlayerService extends ChangeNotifier {
   bool _muted = false;
   String? _error;
   int _state = -1;
+  bool _hostNavigationDone = false;
 
   bool get apiReady => _apiReady;
   bool get isPlaying => _playing;
@@ -115,13 +116,6 @@ class YouTubePlayerService extends ChangeNotifier {
               return true;
             },
           );
-          controller.loadUrl(
-            urlRequest: URLRequest(
-              url: WebUri(
-                'https://raw.githack.com/mazenkareem9098-dev/mezox-music-app/main/docs/player.html',
-              ),
-            ),
-          );
         },
         onLoadError: (controller, url, code, message) {
           _log('loadError=$code message=$message url=$url');
@@ -129,7 +123,22 @@ class YouTubePlayerService extends ChangeNotifier {
         onLoadHttpError: (controller, url, statusCode, description) {
           _log('httpError=$statusCode description=$description url=$url');
         },
+        onLoadStart: (controller, url) {
+          _log('loadStart=$url');
+        },
         onLoadStop: (controller, url) async {
+          _log('loadStop=$url');
+          if (!_hostNavigationDone) {
+            _hostNavigationDone = true;
+            await controller.loadUrl(
+              urlRequest: URLRequest(
+                url: WebUri(
+                  'https://raw.githack.com/mazenkareem9098-dev/mezox-music-app/main/docs/player.html',
+                ),
+              ),
+            );
+            return;
+          }
           await controller.evaluateJavascript(
             source: 'window.__mmNotifyReady && window.__mmNotifyReady();',
           );

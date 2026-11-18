@@ -55,7 +55,11 @@ class YouTubePlayerService extends ChangeNotifier {
   Widget buildView({Key? key}) => InAppWebView(
         key: key,
         initialSettings: _settings,
-        initialData: InAppWebViewInitialData(data: _playerHtml),
+        initialData: InAppWebViewInitialData(
+          data: _playerHtml,
+          baseUrl: WebUri('https://www.youtube.com/'),
+          historyUrl: WebUri('https://www.youtube.com/'),
+        ),
         onWebViewCreated: (controller) {
           _controller = controller;
           controller.addJavaScriptHandler(
